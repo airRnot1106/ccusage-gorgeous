@@ -143,9 +143,6 @@ func (m *Model) View() string {
 		return "Error rendering display: " + err.Error() + "\n"
 	}
 
-	// Add controls help
-	output += "\n\nControls: 'r' to refresh, 'q' to quit\n"
-
 	return output
 }
 
