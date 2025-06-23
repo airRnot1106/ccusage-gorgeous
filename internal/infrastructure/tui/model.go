@@ -92,7 +92,7 @@ func (m *Model) View() string {
 	}
 
 	if m.isLoading {
-		return "Loading cost data... ⏳\n"
+		return ""
 	}
 
 	if m.error != nil {
