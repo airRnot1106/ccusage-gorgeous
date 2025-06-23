@@ -29,6 +29,25 @@ Pre-commit hooks are automatically installed when entering the development shell
 
 Manual formatting: `nix fmt` (formats both Go and Nix files)
 
+## Build and Test Commands
+
+**IMPORTANT:** Use these specific commands for building and testing:
+
+### Build
+- `nix build` - Build the Go application (outputs binary as `ccugorg`)
+
+### Test
+- `nix flake check --no-pure-eval` - Run all tests, verify flake configuration and build
+
+## Development Methodology
+
+**Test-Driven Development (TDD)**: This project follows TDD practices:
+
+1. **Write failing tests first** - Before implementing any new feature or making changes
+2. **Make tests pass** - Implement minimal code to make the failing tests pass
+3. **Refactor** - Improve code quality while keeping tests green
+4. **Repeat** - Continue the Red-Green-Refactor cycle
+
 ## Task Completion Verification
 
 **IMPORTANT:** After completing any task, always run these commands in order:
@@ -84,9 +103,12 @@ This is a TUI application for displaying ccusage cost data with rainbow animatio
 - Rainbow animation using HSL color cycling
 
 **Testing Strategy**:
+- **Test-Driven Development (TDD)**: All new features and changes must be developed using TDD approach
+- Write failing tests first, then implement code to make tests pass
 - Comprehensive unit tests in `test/` directory mirroring `internal/` structure
 - Integration tests for plugin system
 - Test coverage for all plugin implementations
+- Always run tests before and after making changes using `nix flake check --no-pure-eval`
 
 ### Configuration Structure
 
