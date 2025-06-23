@@ -33,10 +33,14 @@
         }:
         {
           packages.default = pkgs.buildGoModule {
-            pname = "ccusage-gorgeous";
+            pname = "ccugorg";
             version = "0.0.1";
             src = ./.;
             vendorHash = "sha256-EooE8SGcDjk+V88c/N5csE+xq8An05K81B1V3OlT/hE=";
+
+            postInstall = ''
+              mv $out/bin/ccusage-gorgeous $out/bin/ccugorg
+            '';
           };
 
           devenv.shells.default = {
