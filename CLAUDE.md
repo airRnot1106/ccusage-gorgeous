@@ -44,7 +44,13 @@ These commands ensure code quality and flake integrity are maintained.
 - `nix/treefmt/default.nix` - Code formatting rules
 
 **Package Configuration:**
-The project uses `pkgs.buildGoModule` with `vendorHash = null`, meaning Go modules are not vendored. Update `vendorHash` in `flake.nix` if vendoring is needed.
+The project uses `pkgs.buildGoModule` with vendor hash for reproducible builds. Dependencies are managed via Go modules.
 
 **Development Shell:**
 Includes Git, Nil (Nix LSP), and Go toolchain. Pre-commit hooks are automatically activated on shell entry.
+
+**ccusage Integration:**
+The application integrates with the ccusage CLI tool via npx:
+- Default configuration uses `npx ccusage` for automatic package resolution
+- Custom paths can be specified in configuration for alternative installations
+- Supports JSON output parsing and caching for performance

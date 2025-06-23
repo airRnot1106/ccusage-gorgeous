@@ -108,8 +108,15 @@ func (c *CcusageCliPlugin) FetchCostData(ctx context.Context) (*domain.CostData,
 	timeoutCtx, cancel := context.WithTimeout(ctx, c.timeout)
 	defer cancel()
 
-	// Execute ccusage command with JSON output
-	cmd := exec.CommandContext(timeoutCtx, c.ccusagePath, "daily", "--json")
+	// Execute ccusage command with JSON output via npx
+	var cmd *exec.Cmd
+	if c.ccusagePath == "ccusage" {
+		// Use npx for default ccusage command
+		cmd = exec.CommandContext(timeoutCtx, "npx", "ccusage", "daily", "--json")
+	} else {
+		// Use custom path as specified
+		cmd = exec.CommandContext(timeoutCtx, c.ccusagePath, "daily", "--json")
+	}
 	output, err := cmd.Output()
 	if err != nil {
 		return nil, fmt.Errorf("failed to execute ccusage command: %w", err)

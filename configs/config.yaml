@@ -30,7 +30,7 @@ animation:
     - "#FF0080"  # Pink
 
 datasource:
-  ccusage_path: "ccusage"
+  ccusage_path: "ccusage"  # Uses 'npx ccusage' when set to 'ccusage', or custom path
   timeout: "30s"
   cache_time: "10s"
 

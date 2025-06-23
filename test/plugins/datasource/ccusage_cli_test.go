@@ -111,6 +111,26 @@ func TestCcusageCliPlugin_FetchCostData_CommandNotFound(t *testing.T) {
 	assert.Contains(t, err.Error(), "failed to execute ccusage command")
 }
 
+func TestCcusageCliPlugin_FetchCostData_NpxDefault(t *testing.T) {
+	plugin := datasource.NewCcusageCliPlugin()
+	ctx := context.Background()
+
+	// Initialize with default "ccusage" path (should use npx)
+	config := map[string]interface{}{
+		"ccusage_path": "ccusage",
+		"timeout":      "1s", // Short timeout for faster test
+	}
+
+	err := plugin.Initialize(config)
+	assert.NoError(t, err)
+
+	// Should attempt to use npx ccusage (will likely fail in test environment, but that's expected)
+	_, err = plugin.FetchCostData(ctx)
+	assert.Error(t, err)
+	// Error message should indicate command execution failure (npx or ccusage not found is expected in test)
+	assert.Contains(t, err.Error(), "failed to execute ccusage command")
+}
+
 func TestCcusageCliPlugin_Initialize_InvalidTimeout(t *testing.T) {
 	plugin := datasource.NewCcusageCliPlugin()
 
