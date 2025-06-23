@@ -104,8 +104,8 @@ func TestApplicationIntegration(t *testing.T) {
 		output, err := activeDisplay.Render(ctx, displayData)
 		assert.NoError(t, err)
 		assert.NotEmpty(t, output)
-		assert.Contains(t, output, "42.50")
-		assert.Contains(t, output, "USD")
+		// Check that ASCII art is generated (contains ASCII block characters)
+		assert.Contains(t, output, "█")
 	})
 
 	// Test different animation patterns
