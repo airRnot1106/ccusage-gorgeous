@@ -116,7 +116,7 @@ func (c *CcusageCliPlugin) Shutdown() error {
 // FetchCostData fetches cost data from ccusage CLI
 func (c *CcusageCliPlugin) FetchCostData(ctx context.Context) (*domain.CostData, error) {
 	if !c.enabled {
-		return nil, fmt.Errorf("plugin is not enabled")
+		return nil, domain.ErrPluginNotEnabled
 	}
 
 	// Check cache first
@@ -186,7 +186,7 @@ func (c *CcusageCliPlugin) FetchCostData(ctx context.Context) (*domain.CostData,
 // GetLastUpdated returns the timestamp of the last data update
 func (c *CcusageCliPlugin) GetLastUpdated(ctx context.Context) (time.Time, error) {
 	if !c.enabled {
-		return time.Time{}, fmt.Errorf("plugin is not enabled")
+		return time.Time{}, domain.ErrPluginNotEnabled
 	}
 
 	return c.lastUpdate, nil

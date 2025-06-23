@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"flag"
 	"fmt"
 	"log"
 
@@ -14,6 +15,18 @@ import (
 )
 
 func main() {
+	// Parse command line flags
+	var bankruptcyMode bool
+	flag.BoolVar(&bankruptcyMode, "bankruptcy", false, "") // Hidden flag - no description
+
+	// Override usage to hide the bankruptcy flag
+	flag.Usage = func() {
+		_, _ = fmt.Fprintf(flag.CommandLine.Output(), "Usage of %s:\n", "ccugorg")
+		// Only show non-hidden flags here if needed in the future
+	}
+
+	flag.Parse()
+
 	// Create context
 	ctx := context.Background()
 
@@ -28,11 +41,22 @@ func main() {
 		log.Fatalf("Configuration validation failed: %v", err)
 	}
 
+	// Update configuration for bankruptcy mode
+	if bankruptcyMode {
+		log.Printf("Enabling bankruptcy mode, updating config to use bankruptcy-datasource")
+		if err := configManager.UpdateConfig(map[string]interface{}{
+			"plugins.datasource": "bankruptcy-datasource",
+		}); err != nil {
+			log.Fatalf("Failed to update config for bankruptcy mode: %v", err)
+		}
+		log.Printf("Config updated successfully for bankruptcy mode")
+	}
+
 	// Initialize plugin registry
 	registry := core.NewPluginRegistry(configManager)
 
 	// Register built-in plugins
-	if err := registerPlugins(registry); err != nil {
+	if err := registerPlugins(registry, bankruptcyMode); err != nil {
 		log.Fatalf("Failed to register plugins: %v", err)
 	}
 
@@ -66,11 +90,18 @@ func main() {
 }
 
 // registerPlugins registers all built-in plugins
-func registerPlugins(registry *core.PluginRegistry) error {
-	// Register data source plugins
-	ccusagePlugin := datasource.NewCcusageCliPlugin()
-	if err := registry.RegisterDataSource(ccusagePlugin); err != nil {
-		return fmt.Errorf("failed to register ccusage CLI plugin: %w", err)
+func registerPlugins(registry *core.PluginRegistry, bankruptcyMode bool) error {
+	// Register appropriate data source plugin based on bankruptcy mode
+	if bankruptcyMode {
+		bankruptcyPlugin := datasource.NewBankruptcyDataSourcePlugin()
+		if err := registry.RegisterDataSource(bankruptcyPlugin); err != nil {
+			return fmt.Errorf("failed to register bankruptcy data source plugin: %w", err)
+		}
+	} else {
+		ccusagePlugin := datasource.NewCcusageCliPlugin()
+		if err := registry.RegisterDataSource(ccusagePlugin); err != nil {
+			return fmt.Errorf("failed to register ccusage CLI plugin: %w", err)
+		}
 	}
 
 	// Register animation plugins

@@ -367,3 +367,84 @@ func TestErrorHandling(t *testing.T) {
 		}
 	})
 }
+
+// TestBankruptcyDataSourceIntegration tests bankruptcy data source functionality
+func TestBankruptcyDataSourceIntegration(t *testing.T) {
+	ctx := context.Background()
+
+	configManager := core.NewConfigManager()
+	err := configManager.LoadConfig("")
+	assert.NoError(t, err)
+
+	// Update configuration to use bankruptcy data source
+	err = configManager.UpdateConfig(map[string]interface{}{
+		"plugins.datasource": "bankruptcy-datasource",
+	})
+	assert.NoError(t, err)
+
+	registry := core.NewPluginRegistry(configManager)
+
+	// Register and initialize plugins including bankruptcy data source
+	bankruptcyPlugin := datasource.NewBankruptcyDataSourcePlugin()
+	rainbowAnimationPlugin := animation.NewRainbowAnimationPlugin()
+	rainbowDisplayPlugin := display.NewRainbowTUIPlugin()
+
+	err = registry.RegisterDataSource(bankruptcyPlugin)
+	assert.NoError(t, err)
+
+	err = registry.RegisterAnimation(rainbowAnimationPlugin)
+	assert.NoError(t, err)
+
+	err = registry.RegisterDisplay(rainbowDisplayPlugin)
+	assert.NoError(t, err)
+
+	err = registry.InitializePlugin(bankruptcyPlugin)
+	assert.NoError(t, err)
+
+	err = registry.InitializePlugin(rainbowAnimationPlugin)
+	assert.NoError(t, err)
+
+	err = registry.InitializePlugin(rainbowDisplayPlugin)
+	assert.NoError(t, err)
+
+	t.Run("BankruptcyDataSourceEndToEnd", func(t *testing.T) {
+		// Verify active data source is bankruptcy plugin
+		activeDataSource, err := registry.GetActiveDataSource()
+		assert.NoError(t, err)
+		assert.Equal(t, "bankruptcy-datasource", activeDataSource.Name())
+
+		// Fetch cost data from bankruptcy source
+		costData, err := activeDataSource.FetchCostData(ctx)
+		assert.NoError(t, err)
+		assert.NotNil(t, costData)
+		assert.Equal(t, 9999.99, costData.TotalCost)
+
+		// Generate animation frame for bankruptcy amount
+		animationConfig := configManager.GetAnimationConfig()
+		assert.NotNil(t, animationConfig)
+
+		frame, err := rainbowAnimationPlugin.GenerateFrame(ctx, "$9999.99", 5, animationConfig)
+		assert.NoError(t, err)
+		assert.NotNil(t, frame)
+		assert.Equal(t, "$9999.99", frame.Text)
+		assert.NotEmpty(t, frame.Colors)
+
+		// Create display data for bankruptcy mode
+		displayConfig := configManager.GetDisplayConfig()
+		assert.NotNil(t, displayConfig)
+
+		displayData := &domain.DisplayData{
+			Cost:        costData,
+			Animation:   frame,
+			Config:      displayConfig,
+			LastUpdated: time.Now(),
+		}
+
+		// Render display
+		output, err := rainbowDisplayPlugin.Render(ctx, displayData)
+		assert.NoError(t, err)
+		assert.NotEmpty(t, output)
+		// Check that ASCII art is generated for bankruptcy amount
+		assert.Contains(t, output, "█")
+	})
+}
