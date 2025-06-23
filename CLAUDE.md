@@ -4,26 +4,27 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Development Environment
 
-This is a Go project managed with Nix Flakes. The development environment includes Go 1.24.3, linting, formatting, and pre-commit hooks.
+This is a Go project managed with Nix Flakes. The development environment includes Go 1.24, linting, formatting, and pre-commit hooks.
 
 ### Essential Commands
 
 - `nix develop` - Enter the development shell with all tools and dependencies
-- `nix build` - Build the Go application (outputs to `./result/bin/ccusage-gorgeous`)
+- `nix build` - Build the Go application (outputs binary as `ccugorg`)
 - `nix fmt` - Format all code (Go files with gofumpt, Nix files with nixfmt)
 
 ### Go Development
 
 Within the Nix development shell, standard Go commands work:
-- `go build` - Build the application
+- `go build -o ccugorg` - Build the application with specific binary name
 - `go test ./...` - Run all tests
+- `go test ./test/plugins/datasource/` - Run specific test package
 - `go mod tidy` - Clean up module dependencies
 
 ### Code Quality
 
 Pre-commit hooks are automatically installed when entering the development shell:
 - `golangci-lint` - Go linting
-- `gofumpt` - Go code formatting  
+- `gofumpt` - Go code formatting
 - `nixfmt` - Nix code formatting
 
 Manual formatting: `nix fmt` (formats both Go and Nix files)
@@ -38,19 +39,64 @@ These commands ensure code quality and flake integrity are maintained.
 
 ## Project Architecture
 
-**Nix Configuration Structure:**
-- `flake.nix` - Main flake configuration with package definition and development shell
+This is a TUI application for displaying ccusage cost data with rainbow animations, built using Clean Architecture principles with a plugin-based system.
+
+### Clean Architecture Layers
+
+**Domain Layer** (`internal/domain/`):
+- Core business entities: `CostData`, `AnimationFrame`, `DisplayConfig`
+- No external dependencies, contains pure business logic
+
+**Application Layer** (`internal/application/`):
+- `interfaces/` - Defines plugin interfaces (`Plugin`, `DataSourcePlugin`, `DisplayPlugin`, `AnimationPlugin`)
+- `usecases/` - Business logic orchestration (currently minimal)
+
+**Infrastructure Layer** (`internal/infrastructure/`):
+- `tui/` - Bubbletea TUI implementation and models
+- External integrations and framework-specific code
+
+### Plugin System Architecture
+
+**Core Plugin Registry** (`internal/core/registry.go`):
+- Centralized plugin management and dependency injection
+- Runtime plugin registration and lifecycle management
+
+**Plugin Types**:
+- **DataSource** (`internal/plugins/datasource/`) - ccusage CLI integration via npx
+- **Display** (`internal/plugins/display/`) - TUI rendering with lipgloss styling
+- **Animation** (`internal/plugins/animation/`) - Rainbow color cycling effects
+
+**Plugin Configuration**:
+- Viper-based configuration management (`internal/core/config.go`)
+- YAML configuration file (`configs/config.yaml`)
+- Plugin-specific settings and runtime parameters
+
+### Key Implementation Details
+
+**ccusage Integration**:
+- Uses `npx ccusage daily --json` for data fetching
+- Parses JSON structure: `{daily: [...], totals: {totalCost, inputTokens, outputTokens, modelBreakdowns}}`
+- Implements caching and timeout handling for performance
+
+**TUI Framework**:
+- Built on Charmbracelet Bubbletea for terminal interface
+- Lipgloss for styling and layout
+- Rainbow animation using HSL color cycling
+
+**Testing Strategy**:
+- Comprehensive unit tests in `test/` directory mirroring `internal/` structure
+- Integration tests for plugin system
+- Test coverage for all plugin implementations
+
+### Configuration Structure
+
+**Nix Configuration**:
+- `flake.nix` - Main flake with `buildGoModule` and development shell
 - `nix/pre-commit/default.nix` - Pre-commit hook configuration
 - `nix/treefmt/default.nix` - Code formatting rules
 
-**Package Configuration:**
-The project uses `pkgs.buildGoModule` with vendor hash for reproducible builds. Dependencies are managed via Go modules.
-
-**Development Shell:**
-Includes Git, Nil (Nix LSP), and Go toolchain. Pre-commit hooks are automatically activated on shell entry.
-
-**ccusage Integration:**
-The application integrates with the ccusage CLI tool via npx:
-- Default configuration uses `npx ccusage` for automatic package resolution
-- Custom paths can be specified in configuration for alternative installations
-- Supports JSON output parsing and caching for performance
+**Application Configuration** (`configs/config.yaml`):
+- Display settings (format, dimensions, colors)
+- Animation parameters (speed, pattern, rainbow colors)
+- Datasource configuration (ccusage path, timeout, caching)
+- Plugin selection and initialization
