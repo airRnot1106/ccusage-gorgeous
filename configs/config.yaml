@@ -1,0 +1,41 @@
+# ccusage-gorgeous configuration file
+
+app:
+  log_level: "info"
+  refresh_rate: "1s"
+
+display:
+  format: "large"
+  width: 80
+  height: 24
+  show_timestamp: true
+  show_breakdown: true
+
+animation:
+  enabled: true
+  speed: "100ms"
+  pattern: "rainbow"
+  colors:
+    - "#FF0000"  # Red
+    - "#FF8000"  # Orange
+    - "#FFFF00"  # Yellow
+    - "#80FF00"  # Light Green
+    - "#00FF00"  # Green
+    - "#00FF80"  # Cyan Green
+    - "#00FFFF"  # Cyan
+    - "#0080FF"  # Light Blue
+    - "#0000FF"  # Blue
+    - "#8000FF"  # Purple
+    - "#FF00FF"  # Magenta
+    - "#FF0080"  # Pink
+
+datasource:
+  ccusage_path: "ccusage"
+  timeout: "30s"
+  cache_time: "10s"
+
+plugins:
+  datasource: "ccusage-cli"
+  display: "rainbow-display"
+  animation: "rainbow-animation"
+  config: {}

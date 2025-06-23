@@ -36,7 +36,7 @@
             pname = "ccusage-gorgeous";
             version = "0.0.1";
             src = ./.;
-            vendorHash = null;
+            vendorHash = "sha256-EooE8SGcDjk+V88c/N5csE+xq8An05K81B1V3OlT/hE=";
           };
 
           devenv.shells.default = {
