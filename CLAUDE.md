@@ -58,7 +58,10 @@ These commands ensure code quality and flake integrity are maintained.
 
 ## Project Architecture
 
-This is a TUI application for displaying ccusage cost data with rainbow animations, built using Clean Architecture principles with a plugin-based system.
+This is a TUI application that displays ccusage cost data as large ASCII art with rainbow animations. The application follows Clean Architecture principles with a plugin-based system.
+
+### Core Purpose
+The application transforms ccusage cost data into visually appealing ASCII art displaying only the total cost in $99.99 format with rainbow color animation. All other UI elements have been removed for a clean, focused display.
 
 ### Clean Architecture Layers
 
@@ -82,7 +85,7 @@ This is a TUI application for displaying ccusage cost data with rainbow animatio
 
 **Plugin Types**:
 - **DataSource** (`internal/plugins/datasource/`) - ccusage CLI integration via npx
-- **Display** (`internal/plugins/display/`) - TUI rendering with lipgloss styling
+- **Display** (`internal/plugins/display/`) - ASCII art generation with responsive font sizing
 - **Animation** (`internal/plugins/animation/`) - Rainbow color cycling effects
 
 **Plugin Configuration**:
@@ -92,6 +95,12 @@ This is a TUI application for displaying ccusage cost data with rainbow animatio
 
 ### Key Implementation Details
 
+**ASCII Art Display System**:
+- Responsive font selection: small (7-row) fonts for screens <100 width or <25 height, large (10-row) fonts otherwise
+- Character spacing: 2-space gaps between ASCII letters for readability
+- Centered display: both horizontal and vertical centering within terminal dimensions
+- Complete character set: digits 0-9, dollar sign ($), and decimal point (.)
+
 **ccusage Integration**:
 - Uses `npx ccusage daily --json` for data fetching
 - Parses JSON structure: `{daily: [...], totals: {totalCost, inputTokens, outputTokens, modelBreakdowns}}`
@@ -99,26 +108,25 @@ This is a TUI application for displaying ccusage cost data with rainbow animatio
 
 **TUI Framework**:
 - Built on Charmbracelet Bubbletea for terminal interface
-- Lipgloss for styling and layout
-- Rainbow animation using HSL color cycling
+- Lipgloss for styling and rainbow color application
+- HSL-based color cycling for smooth rainbow animations
+- Clean startup: no loading text or control instructions displayed
 
 **Testing Strategy**:
-- **Test-Driven Development (TDD)**: All new features and changes must be developed using TDD approach
-- Write failing tests first, then implement code to make tests pass
 - Comprehensive unit tests in `test/` directory mirroring `internal/` structure
-- Integration tests for plugin system
-- Test coverage for all plugin implementations
-- Always run tests before and after making changes using `nix flake check --no-pure-eval`
+- Integration tests for plugin system and end-to-end workflows
+- Tests validate ASCII art generation (checking for `█` block characters)
+- Test coverage for all plugin implementations and display formats
 
 ### Configuration Structure
 
 **Nix Configuration**:
-- `flake.nix` - Main flake with `buildGoModule` and development shell
+- `flake.nix` - Main flake with `buildGoModule`, renames binary to `ccugorg`
 - `nix/pre-commit/default.nix` - Pre-commit hook configuration
 - `nix/treefmt/default.nix` - Code formatting rules
 
 **Application Configuration** (`configs/config.yaml`):
-- Display settings (format, dimensions, colors)
-- Animation parameters (speed, pattern, rainbow colors)
-- Datasource configuration (ccusage path, timeout, caching)
-- Plugin selection and initialization
+- Display settings: format, dimensions, show options
+- Animation parameters: speed (100ms), pattern (rainbow), 12-color rainbow spectrum
+- Datasource configuration: ccusage path, timeout (30s), caching (10s)
+- Plugin selection: specifies active datasource, display, and animation plugins
