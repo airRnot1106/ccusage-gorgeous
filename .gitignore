@@ -1,8 +1,14 @@
 # Created by https://www.toptal.com/developers/gitignore/api/direnv,go
 # Edit at https://www.toptal.com/developers/gitignore?templates=direnv,go
 
+### devenv ###
+.devenv
+
 ### direnv ###
 .direnv
+
+### git-hooks ###
+.pre-commit-config.yaml
 
 ### Go ###
 # If you prefer the allow list template instead of the deny list, see community template:
@@ -23,6 +29,7 @@
 
 # Dependency directories (remove the comment below to include it)
 vendor/
+result
 
 # Go workspace file
 go.work
