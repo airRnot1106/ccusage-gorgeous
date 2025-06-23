@@ -55,7 +55,10 @@
             '';
           };
 
-          pre-commit = import ./nix/pre-commit { inherit config; };
+          pre-commit = import ./nix/pre-commit {
+            inherit config;
+            inherit pkgs;
+          };
           treefmt = import ./nix/treefmt;
         };
     };
