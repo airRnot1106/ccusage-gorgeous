@@ -25,10 +25,30 @@ type CcusageCliPlugin struct {
 
 // CcusageResponse represents the JSON response from ccusage CLI
 type CcusageResponse struct {
-	TotalCost      float64            `json:"total_cost"`
-	Currency       string             `json:"currency"`
-	Date           string             `json:"date"`
-	ModelBreakdown map[string]float64 `json:"model_breakdown,omitempty"`
+	Daily  []DailyEntry `json:"daily"`
+	Totals TotalsData   `json:"totals"`
+}
+
+// DailyEntry represents a single day's usage data
+type DailyEntry struct {
+	Date string  `json:"date"`
+	Cost float64 `json:"cost"`
+}
+
+// TotalsData represents the totals section of ccusage output
+type TotalsData struct {
+	TotalCost       float64          `json:"totalCost"`
+	InputTokens     int              `json:"inputTokens"`
+	OutputTokens    int              `json:"outputTokens"`
+	ModelBreakdowns []ModelBreakdown `json:"modelBreakdowns"`
+}
+
+// ModelBreakdown represents per-model cost breakdown
+type ModelBreakdown struct {
+	Model        string  `json:"model"`
+	InputTokens  int     `json:"inputTokens"`
+	OutputTokens int     `json:"outputTokens"`
+	Cost         float64 `json:"cost"`
 }
 
 // NewCcusageCliPlugin creates a new ccusage CLI plugin
@@ -125,13 +145,15 @@ func (c *CcusageCliPlugin) FetchCostData(ctx context.Context) (*domain.CostData,
 	// Parse JSON response
 	var response CcusageResponse
 	if err := json.Unmarshal(output, &response); err != nil {
-		return nil, fmt.Errorf("failed to parse ccusage JSON output: %w", err)
+		return nil, fmt.Errorf("failed to parse ccusage JSON output: %w (raw output: %s)", err, string(output))
 	}
 
-	// Parse date
+	// Parse date from the most recent daily entry or use current time
 	var timestamp time.Time
-	if response.Date != "" {
-		if parsedTime, err := time.Parse("2006-01-02", response.Date); err == nil {
+	if len(response.Daily) > 0 {
+		// Use the last entry's date
+		lastEntry := response.Daily[len(response.Daily)-1]
+		if parsedTime, err := time.Parse("2006-01-02", lastEntry.Date); err == nil {
 			timestamp = parsedTime
 		} else {
 			timestamp = time.Now()
@@ -140,12 +162,18 @@ func (c *CcusageCliPlugin) FetchCostData(ctx context.Context) (*domain.CostData,
 		timestamp = time.Now()
 	}
 
+	// Build model breakdown from model breakdowns
+	modelBreakdown := make(map[string]float64)
+	for _, breakdown := range response.Totals.ModelBreakdowns {
+		modelBreakdown[breakdown.Model] = breakdown.Cost
+	}
+
 	// Convert to domain model
 	costData := &domain.CostData{
-		TotalCost:      response.TotalCost,
-		Currency:       response.Currency,
+		TotalCost:      response.Totals.TotalCost,
+		Currency:       "USD", // ccusage typically uses USD
 		Timestamp:      timestamp,
-		ModelBreakdown: response.ModelBreakdown,
+		ModelBreakdown: modelBreakdown,
 	}
 
 	// Update cache
