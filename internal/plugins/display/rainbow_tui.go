@@ -134,95 +134,28 @@ func (r *RainbowTUIPlugin) ValidateDisplayConfig(config *domain.DisplayConfig) e
 
 // renderLarge renders the large format display
 func (r *RainbowTUIPlugin) renderLarge(data *domain.DisplayData) (string, error) {
-	var output strings.Builder
-
-	// Title
-	title := r.applyRainbowColors("💰 Claude Code Usage Cost", data.Animation)
-	titleStyle := lipgloss.NewStyle().
-		Bold(true).
-		Align(lipgloss.Center).
-		Width(data.Config.Size.Width).
-		MarginBottom(1)
-	output.WriteString(titleStyle.Render(title))
-	output.WriteString("\n")
-
-	// Main cost display
-	if data.Cost != nil {
-		costText := fmt.Sprintf("$%.2f", data.Cost.TotalCost)
-		rainbowCostText := r.applyRainbowColors(costText, data.Animation)
-
-		costStyle := lipgloss.NewStyle().
-			Bold(true).
-			Align(lipgloss.Center).
-			Width(data.Config.Size.Width).
-			BorderStyle(lipgloss.RoundedBorder()).
-			BorderForeground(lipgloss.Color("#888888")).
-			Padding(2, 4).
-			MarginBottom(1)
-
-		output.WriteString(costStyle.Render(rainbowCostText))
-		output.WriteString("\n")
-
-		// Currency and timestamp
-		if data.Config.ShowTimestamp {
-			timestampText := fmt.Sprintf("Currency: %s | Last Updated: %s",
-				data.Cost.Currency,
-				data.Cost.Timestamp.Format("2006-01-02 15:04:05"))
-
-			timestampStyle := lipgloss.NewStyle().
-				Align(lipgloss.Center).
-				Width(data.Config.Size.Width).
-				Foreground(lipgloss.Color("#666666")).
-				MarginBottom(1)
-
-			output.WriteString(timestampStyle.Render(timestampText))
-			output.WriteString("\n")
-		}
-
-		// Model breakdown
-		if data.Config.ShowBreakdown && data.Cost.ModelBreakdown != nil && len(data.Cost.ModelBreakdown) > 0 {
-			output.WriteString(r.renderModelBreakdown(data.Cost.ModelBreakdown, data))
-		}
+	if data.Cost == nil {
+		return "", nil
 	}
 
-	return output.String(), nil
+	asciiArt := r.generateASCIIArtWithSize(data.Cost.TotalCost, data.Config.Size.Width, data.Config.Size.Height)
+	centeredAsciiArt := r.centerASCIIArt(asciiArt, data.Config.Size.Width, data.Config.Size.Height)
+	rainbowAsciiArt := r.applyRainbowColors(centeredAsciiArt, data.Animation)
+
+	return rainbowAsciiArt, nil
 }
 
 // renderMedium renders the medium format display
 func (r *RainbowTUIPlugin) renderMedium(data *domain.DisplayData) (string, error) {
-	var output strings.Builder
-
-	if data.Cost != nil {
-		costText := fmt.Sprintf("💰 $%.2f", data.Cost.TotalCost)
-		rainbowCostText := r.applyRainbowColors(costText, data.Animation)
-
-		costStyle := lipgloss.NewStyle().
-			Bold(true).
-			Align(lipgloss.Center).
-			Width(data.Config.Size.Width).
-			BorderStyle(lipgloss.NormalBorder()).
-			Padding(1, 2).
-			MarginBottom(1)
-
-		output.WriteString(costStyle.Render(rainbowCostText))
-		output.WriteString("\n")
-
-		if data.Config.ShowTimestamp {
-			timestampText := fmt.Sprintf("%s | %s",
-				data.Cost.Currency,
-				data.Cost.Timestamp.Format("15:04:05"))
-
-			timestampStyle := lipgloss.NewStyle().
-				Align(lipgloss.Center).
-				Width(data.Config.Size.Width).
-				Foreground(lipgloss.Color("#888888"))
-
-			output.WriteString(timestampStyle.Render(timestampText))
-			output.WriteString("\n")
-		}
+	if data.Cost == nil {
+		return "", nil
 	}
 
-	return output.String(), nil
+	asciiArt := r.generateASCIIArtWithSize(data.Cost.TotalCost, data.Config.Size.Width, data.Config.Size.Height)
+	centeredAsciiArt := r.centerASCIIArt(asciiArt, data.Config.Size.Width, data.Config.Size.Height)
+	rainbowAsciiArt := r.applyRainbowColors(centeredAsciiArt, data.Animation)
+
+	return rainbowAsciiArt, nil
 }
 
 // renderSmall renders the small format display
@@ -231,15 +164,11 @@ func (r *RainbowTUIPlugin) renderSmall(data *domain.DisplayData) (string, error)
 		return "", nil
 	}
 
-	costText := fmt.Sprintf("$%.2f", data.Cost.TotalCost)
-	rainbowCostText := r.applyRainbowColors(costText, data.Animation)
+	asciiArt := r.generateASCIIArtWithSize(data.Cost.TotalCost, data.Config.Size.Width, data.Config.Size.Height)
+	centeredAsciiArt := r.centerASCIIArt(asciiArt, data.Config.Size.Width, data.Config.Size.Height)
+	rainbowAsciiArt := r.applyRainbowColors(centeredAsciiArt, data.Animation)
 
-	costStyle := lipgloss.NewStyle().
-		Bold(true).
-		Align(lipgloss.Center).
-		Width(data.Config.Size.Width)
-
-	return costStyle.Render(rainbowCostText), nil
+	return rainbowAsciiArt, nil
 }
 
 // renderMinimal renders the minimal format display
@@ -248,38 +177,385 @@ func (r *RainbowTUIPlugin) renderMinimal(data *domain.DisplayData) (string, erro
 		return "", nil
 	}
 
-	costText := fmt.Sprintf("$%.2f", data.Cost.TotalCost)
-	return r.applyRainbowColors(costText, data.Animation), nil
+	asciiArt := r.generateASCIIArtWithSize(data.Cost.TotalCost, data.Config.Size.Width, data.Config.Size.Height)
+	centeredAsciiArt := r.centerASCIIArt(asciiArt, data.Config.Size.Width, data.Config.Size.Height)
+	rainbowAsciiArt := r.applyRainbowColors(centeredAsciiArt, data.Animation)
+
+	return rainbowAsciiArt, nil
 }
 
-// renderModelBreakdown renders the model cost breakdown
-func (r *RainbowTUIPlugin) renderModelBreakdown(breakdown map[string]float64, data *domain.DisplayData) string {
-	var output strings.Builder
-
-	breakdownTitle := r.applyRainbowColors("📊 Model Breakdown", data.Animation)
-	titleStyle := lipgloss.NewStyle().
-		Bold(true).
-		Align(lipgloss.Center).
-		Width(data.Config.Size.Width).
-		MarginBottom(1)
-
-	output.WriteString(titleStyle.Render(breakdownTitle))
-	output.WriteString("\n")
-
-	for model, cost := range breakdown {
-		modelText := fmt.Sprintf("%-20s $%.2f", model, cost)
-		rainbowModelText := r.applyRainbowColors(modelText, data.Animation)
-
-		modelStyle := lipgloss.NewStyle().
-			Align(lipgloss.Left).
-			Width(data.Config.Size.Width).
-			PaddingLeft(4)
-
-		output.WriteString(modelStyle.Render(rainbowModelText))
-		output.WriteString("\n")
+// centerASCIIArt centers ASCII art both horizontally and vertically within given dimensions
+func (r *RainbowTUIPlugin) centerASCIIArt(asciiArt string, width, height int) string {
+	lines := strings.Split(asciiArt, "\n")
+	if len(lines) == 0 {
+		return ""
 	}
 
-	return output.String()
+	// Find the maximum line width
+	maxLineWidth := 0
+	for _, line := range lines {
+		lineWidth := len([]rune(line)) // Use runes to handle Unicode properly
+		if lineWidth > maxLineWidth {
+			maxLineWidth = lineWidth
+		}
+	}
+
+	// Calculate horizontal padding for centering
+	horizontalPadding := 0
+	if width > maxLineWidth {
+		horizontalPadding = (width - maxLineWidth) / 2
+	}
+
+	// Calculate vertical padding for centering
+	verticalPadding := 0
+	if height > len(lines) {
+		verticalPadding = (height - len(lines)) / 2
+	}
+
+	// Create centered output
+	var result strings.Builder
+
+	// Add top vertical padding
+	for i := 0; i < verticalPadding; i++ {
+		result.WriteString("\n")
+	}
+
+	// Center each line horizontally
+	for i, line := range lines {
+		if horizontalPadding > 0 {
+			result.WriteString(strings.Repeat(" ", horizontalPadding))
+		}
+		result.WriteString(line)
+		if i < len(lines)-1 {
+			result.WriteString("\n")
+		}
+	}
+
+	// Add bottom vertical padding
+	for i := 0; i < verticalPadding; i++ {
+		result.WriteString("\n")
+	}
+
+	return result.String()
+}
+
+// getSmallLetterPatterns returns small ASCII art patterns for small screens
+func (r *RainbowTUIPlugin) getSmallLetterPatterns() map[rune][]string {
+	return map[rune][]string{
+		'$': {
+			"    ███  ",
+			" ███████ ",
+			"███ ███  ",
+			" ███████ ",
+			"  ███ ███",
+			" ███████ ",
+			"   ███   ",
+		},
+		'0': {
+			" ███████ ",
+			"███   ███",
+			"███   ███",
+			"███   ███",
+			"███   ███",
+			"███   ███",
+			" ███████ ",
+		},
+		'1': {
+			"   ███   ",
+			" █████   ",
+			"   ███   ",
+			"   ███   ",
+			"   ███   ",
+			"   ███   ",
+			" ███████ ",
+		},
+		'2': {
+			" ███████ ",
+			"███   ███",
+			"      ███",
+			" ███████ ",
+			"███      ",
+			"███      ",
+			"█████████",
+		},
+		'3': {
+			" ███████ ",
+			"███   ███",
+			"      ███",
+			"   █████ ",
+			"      ███",
+			"███   ███",
+			" ███████ ",
+		},
+		'4': {
+			"███   ███",
+			"███   ███",
+			"███   ███",
+			"█████████",
+			"      ███",
+			"      ███",
+			"      ███",
+		},
+		'5': {
+			"█████████",
+			"███      ",
+			"███      ",
+			"████████ ",
+			"      ███",
+			"███   ███",
+			" ███████ ",
+		},
+		'6': {
+			" ███████ ",
+			"███   ███",
+			"███      ",
+			"████████ ",
+			"███   ███",
+			"███   ███",
+			" ███████ ",
+		},
+		'7': {
+			"█████████",
+			"      ███",
+			"     ███ ",
+			"    ███  ",
+			"   ███   ",
+			"  ███    ",
+			" ███     ",
+		},
+		'8': {
+			" ███████ ",
+			"███   ███",
+			"███   ███",
+			" ███████ ",
+			"███   ███",
+			"███   ███",
+			" ███████ ",
+		},
+		'9': {
+			" ███████ ",
+			"███   ███",
+			"███   ███",
+			" ████████",
+			"      ███",
+			"███   ███",
+			" ███████ ",
+		},
+		'.': {
+			"      ",
+			"      ",
+			"      ",
+			"      ",
+			"      ",
+			" ███  ",
+			" ███  ",
+		},
+		' ': {
+			"         ",
+			"         ",
+			"         ",
+			"         ",
+			"         ",
+			"         ",
+			"         ",
+		},
+	}
+}
+
+// getLargeLetterPatterns returns large ASCII art patterns for large screens
+func (r *RainbowTUIPlugin) getLargeLetterPatterns() map[rune][]string {
+	return map[rune][]string{
+		'$': {
+			"     ████     ",
+			"  ███████████ ",
+			" ████ ███     ",
+			"████  ████    ",
+			" ███████████  ",
+			"  ███████████ ",
+			"     ████ ████",
+			"████████  ████",
+			" ███████████  ",
+			"     ████     ",
+		},
+		'0': {
+			"  ██████████  ",
+			" ████    ████ ",
+			"████      ████",
+			"████      ████",
+			"████      ████",
+			"████      ████",
+			"████      ████",
+			"████      ████",
+			" ████    ████ ",
+			"  ██████████  ",
+		},
+		'1': {
+			"     ████     ",
+			"  ███████     ",
+			"     ████     ",
+			"     ████     ",
+			"     ████     ",
+			"     ████     ",
+			"     ████     ",
+			"     ████     ",
+			"     ████     ",
+			"██████████████",
+		},
+		'2': {
+			"  ███████████ ",
+			" ████     ████",
+			"          ████",
+			"         ████ ",
+			"       ████   ",
+			"     ████     ",
+			"   ████       ",
+			" ████         ",
+			"████          ",
+			"██████████████",
+		},
+		'3': {
+			"  ███████████ ",
+			" ████     ████",
+			"          ████",
+			"          ████",
+			"     █████████",
+			"          ████",
+			"          ████",
+			"          ████",
+			" ████     ████",
+			"  ███████████ ",
+		},
+		'4': {
+			"████      ████",
+			"████      ████",
+			"████      ████",
+			"████      ████",
+			"██████████████",
+			"          ████",
+			"          ████",
+			"          ████",
+			"          ████",
+			"          ████",
+		},
+		'5': {
+			"██████████████",
+			"████          ",
+			"████          ",
+			"████          ",
+			"█████████████ ",
+			"          ████",
+			"          ████",
+			"          ████",
+			" ████     ████",
+			"  ███████████ ",
+		},
+		'6': {
+			"  ███████████ ",
+			" ████     ████",
+			"████          ",
+			"████          ",
+			"█████████████ ",
+			"████      ████",
+			"████      ████",
+			"████      ████",
+			" ████     ████",
+			"  ███████████ ",
+		},
+		'7': {
+			"██████████████",
+			"          ████",
+			"         ████ ",
+			"        ████  ",
+			"       ████   ",
+			"      ████    ",
+			"     ████     ",
+			"    ████      ",
+			"   ████       ",
+			"  ████        ",
+		},
+		'8': {
+			"  ██████████  ",
+			" ████    ████ ",
+			"████      ████",
+			" ████    ████ ",
+			"  ██████████  ",
+			" ████    ████ ",
+			"████      ████",
+			"████      ████",
+			" ████    ████ ",
+			"  ██████████  ",
+		},
+		'9': {
+			"  ██████████  ",
+			" ████    ████ ",
+			"████      ████",
+			"████      ████",
+			" █████████████",
+			"          ████",
+			"          ████",
+			"          ████",
+			" ████     ███ ",
+			"  ██████████  ",
+		},
+		'.': {
+			"         ",
+			"         ",
+			"         ",
+			"         ",
+			"         ",
+			"         ",
+			"         ",
+			" ██████  ",
+			" ██████  ",
+			" ██████  ",
+		},
+		' ': {
+			"              ",
+			"              ",
+			"              ",
+			"              ",
+			"              ",
+			"              ",
+			"              ",
+			"              ",
+			"              ",
+			"              ",
+		},
+	}
+}
+
+// generateASCIIArtWithSize converts a dollar amount to ASCII art with specified size
+func (r *RainbowTUIPlugin) generateASCIIArtWithSize(amount float64, width, height int) string {
+	text := fmt.Sprintf("$%.2f", amount)
+
+	// Choose pattern set based on screen size
+	var patterns map[rune][]string
+	var numRows int
+
+	// Use small patterns for smaller screens
+	if width < 100 || height < 25 {
+		patterns = r.getSmallLetterPatterns()
+		numRows = 7
+	} else {
+		patterns = r.getLargeLetterPatterns()
+		numRows = 10
+	}
+
+	// Build ASCII art line by line with spacing between characters
+	lines := make([]string, numRows)
+	for charIndex, char := range text {
+		if pattern, exists := patterns[char]; exists {
+			for i, line := range pattern {
+				lines[i] += line
+				// Add spacing between characters (except for the last character)
+				if charIndex < len(text)-1 {
+					lines[i] += "  " // 2 spaces between characters
+				}
+			}
+		}
+	}
+
+	return strings.Join(lines, "\n")
 }
 
 // applyRainbowColors applies rainbow colors to text based on animation frame
@@ -289,13 +565,19 @@ func (r *RainbowTUIPlugin) applyRainbowColors(text string, animation *domain.Ani
 	}
 
 	var styledText strings.Builder
+	lines := strings.Split(text, "\n")
 
-	for i, char := range text {
-		colorIndex := i % len(animation.Colors)
-		color := animation.Colors[colorIndex]
+	for lineIndex, line := range lines {
+		for i, char := range line {
+			colorIndex := (lineIndex*len(line) + i) % len(animation.Colors)
+			color := animation.Colors[colorIndex]
 
-		charStyle := lipgloss.NewStyle().Foreground(lipgloss.Color(color))
-		styledText.WriteString(charStyle.Render(string(char)))
+			charStyle := lipgloss.NewStyle().Foreground(lipgloss.Color(color))
+			styledText.WriteString(charStyle.Render(string(char)))
+		}
+		if lineIndex < len(lines)-1 {
+			styledText.WriteString("\n")
+		}
 	}
 
 	return styledText.String()
