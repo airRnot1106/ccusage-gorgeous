@@ -41,12 +41,36 @@ Manual formatting: `nix fmt` (formats both Go and Nix files)
 
 ## Development Methodology
 
-**Test-Driven Development (TDD)**: This project follows TDD practices:
+**Test-Driven Development (TDD)**: This project follows TDD practices using the t-wada methodology:
+
+### TDD TODO List (t-wada Style)
+
+#### Basic Principles
+
+- 🔴 Red: Write a failing test
+- 🟢 Green: Implement the minimal code to make the test pass
+- 🔵 Refactor: Improve the code structure without changing behavior
+- Move forward in small steps
+- Start with a throwaway (hard-coded) implementation
+- Generalize by triangulation
+- If the correct implementation is obvious, it is acceptable to implement it directly
+- Keep the test list always up to date
+- Begin writing tests where uncertainty is greatest
+
+#### TDD Process
 
 1. **Write failing tests first** - Before implementing any new feature or making changes
 2. **Make tests pass** - Implement minimal code to make the failing tests pass
 3. **Refactor** - Improve code quality while keeping tests green
 4. **Repeat** - Continue the Red-Green-Refactor cycle
+
+#### Implementation Guidelines
+
+- Always maintain a test list to track progress
+- Implement the simplest solution that makes tests pass
+- Use triangulation when the implementation path is unclear
+- Refactor fearlessly with comprehensive test coverage
+- Start development where uncertainty is highest
 
 ## Task Completion Verification
 
