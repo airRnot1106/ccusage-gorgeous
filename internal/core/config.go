@@ -251,3 +251,46 @@ func (cm *ConfigManager) ValidateConfig() error {
 
 	return nil
 }
+
+// ApplyFlagsToConfig applies command line flag values to configuration
+func (cm *ConfigManager) ApplyFlagsToConfig(flagConfig *FlagConfig) error {
+	if cm.config == nil {
+		return fmt.Errorf("no configuration loaded")
+	}
+
+	// Apply display configuration from flags
+	if flagConfig.Display.Format != "" {
+		cm.config.Display.Format = flagConfig.Display.Format
+	}
+
+	if flagConfig.Display.Width > 0 {
+		cm.config.Display.Width = flagConfig.Display.Width
+	}
+
+	if flagConfig.Display.Height > 0 {
+		cm.config.Display.Height = flagConfig.Display.Height
+	}
+
+	if flagConfig.Display.ShowTimestamp != nil {
+		cm.config.Display.ShowTimestamp = *flagConfig.Display.ShowTimestamp
+	}
+
+	if flagConfig.Display.ShowBreakdown != nil {
+		cm.config.Display.ShowBreakdown = *flagConfig.Display.ShowBreakdown
+	}
+
+	// Apply animation configuration from flags
+	if flagConfig.Animation.Speed > 0 {
+		cm.config.Animation.Speed = flagConfig.Animation.Speed
+	}
+
+	if flagConfig.Animation.Pattern != "" {
+		cm.config.Animation.Pattern = flagConfig.Animation.Pattern
+	}
+
+	if flagConfig.Animation.Enabled != nil {
+		cm.config.Animation.Enabled = *flagConfig.Animation.Enabled
+	}
+
+	return nil
+}

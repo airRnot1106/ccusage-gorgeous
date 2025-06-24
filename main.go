@@ -2,9 +2,9 @@ package main
 
 import (
 	"context"
-	"flag"
 	"fmt"
 	"log"
+	"os"
 
 	"github.com/airRnot1106/ccusage-gorgeous/internal/core"
 	"github.com/airRnot1106/ccusage-gorgeous/internal/infrastructure/tui"
@@ -15,17 +15,28 @@ import (
 )
 
 func main() {
-	// Parse command line flags
-	var bankruptcyMode bool
-	flag.BoolVar(&bankruptcyMode, "bankruptcy", false, "") // Hidden flag - no description
-
-	// Override usage to hide the bankruptcy flag
-	flag.Usage = func() {
-		_, _ = fmt.Fprintf(flag.CommandLine.Output(), "Usage of %s:\n", "ccugorg")
-		// Only show non-hidden flags here if needed in the future
+	// Parse command line flags using our custom parser
+	// Check for help flag first
+	for _, arg := range os.Args[1:] {
+		if arg == "--help" || arg == "-h" {
+			printUsage()
+			return
+		}
 	}
 
-	flag.Parse()
+	flagConfig, err := core.ParseFlagsFromArgs(os.Args[1:])
+	if err != nil {
+		log.Fatalf("Failed to parse command line flags: %v", err)
+	}
+
+	// Check for bankruptcy mode in the arguments manually
+	bankruptcyMode := false
+	for _, arg := range os.Args[1:] {
+		if arg == "--bankruptcy" {
+			bankruptcyMode = true
+			break
+		}
+	}
 
 	// Create context
 	ctx := context.Background()
@@ -34,6 +45,11 @@ func main() {
 	configManager := core.NewConfigManager()
 	if err := configManager.LoadConfig(""); err != nil {
 		log.Fatalf("Failed to load configuration: %v", err)
+	}
+
+	// Apply command line flags to override configuration
+	if err := configManager.ApplyFlagsToConfig(flagConfig); err != nil {
+		log.Fatalf("Failed to apply command line flags: %v", err)
 	}
 
 	// Validate configuration
@@ -158,4 +174,29 @@ func verifyRequiredPlugins(registry *core.PluginRegistry) error {
 		dataSourceCount, displayCount, animationCount)
 
 	return nil
+}
+
+// printUsage prints the usage information
+func printUsage() {
+	fmt.Fprintf(os.Stderr, "Usage of %s:\n", "ccugorg")
+	fmt.Fprintf(os.Stderr, "  --format string\n")
+	fmt.Fprintf(os.Stderr, "        Display format (large, medium, small, minimal)\n")
+	fmt.Fprintf(os.Stderr, "  --width int\n")
+	fmt.Fprintf(os.Stderr, "        Display width\n")
+	fmt.Fprintf(os.Stderr, "  --height int\n")
+	fmt.Fprintf(os.Stderr, "        Display height\n")
+	fmt.Fprintf(os.Stderr, "  --show-timestamp\n")
+	fmt.Fprintf(os.Stderr, "        Show timestamp\n")
+	fmt.Fprintf(os.Stderr, "  --no-timestamp\n")
+	fmt.Fprintf(os.Stderr, "        Hide timestamp\n")
+	fmt.Fprintf(os.Stderr, "  --show-breakdown\n")
+	fmt.Fprintf(os.Stderr, "        Show breakdown\n")
+	fmt.Fprintf(os.Stderr, "  --no-breakdown\n")
+	fmt.Fprintf(os.Stderr, "        Hide breakdown\n")
+	fmt.Fprintf(os.Stderr, "  --animation-speed string\n")
+	fmt.Fprintf(os.Stderr, "        Animation speed (e.g., 100ms)\n")
+	fmt.Fprintf(os.Stderr, "  --animation-pattern string\n")
+	fmt.Fprintf(os.Stderr, "        Animation pattern (rainbow, gradient, pulse, wave)\n")
+	fmt.Fprintf(os.Stderr, "  --no-animation\n")
+	fmt.Fprintf(os.Stderr, "        Disable animation\n")
 }
