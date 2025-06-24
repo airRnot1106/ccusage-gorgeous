@@ -9,8 +9,8 @@ This is a Go project managed with Nix Flakes. The development environment includ
 ### Essential Commands
 
 - `nix develop` - Enter the development shell with all tools and dependencies
-- `nix build` - Build the Go application (outputs binary as `ccugorg`)
-- `nix fmt` - Format all code (Go files with gofumpt, Nix files with nixfmt)
+- `git add . && nix build` - Build the Go application (outputs binary as `ccugorg`)
+- `git add . && nix fmt` - Format all code (Go files with gofumpt, Nix files with nixfmt)
 
 ### Go Development
 
@@ -27,17 +27,17 @@ Pre-commit hooks are automatically installed when entering the development shell
 - `gofumpt` - Go code formatting
 - `nixfmt` - Nix code formatting
 
-Manual formatting: `nix fmt` (formats both Go and Nix files)
+Manual formatting: `git add . && nix fmt` (formats both Go and Nix files)
 
 ## Build and Test Commands
 
 **IMPORTANT:** Use these specific commands for building and testing:
 
 ### Build
-- `nix build` - Build the Go application (outputs binary as `ccugorg`)
+- `git add . && nix build` - Build the Go application (outputs binary as `ccugorg`)
 
 ### Test
-- `nix flake check --no-pure-eval` - Run all tests, verify flake configuration and build
+- `git add . && nix flake check --no-pure-eval` - Run all tests, verify flake configuration and build
 
 ## Development Methodology
 
@@ -75,8 +75,11 @@ Manual formatting: `nix fmt` (formats both Go and Nix files)
 ## Task Completion Verification
 
 **IMPORTANT:** After completing any task, always run these commands in order:
-1. `nix fmt` - Format all code (Go and Nix files)
-2. `nix flake check --no-pure-eval` - Verify flake configuration and build
+1. `git add .` - Stage all changes (REQUIRED before any nix command)
+2. `nix fmt` - Format all code (Go and Nix files)
+3. `nix flake check --no-pure-eval` - Verify flake configuration and build
+
+**CRITICAL:** Always run `git add .` before `nix fmt`, `nix flake check`, or `nix build`. The Nix build system requires Git staging to properly detect and include changes in the build process.
 
 These commands ensure code quality and flake integrity are maintained.
 
