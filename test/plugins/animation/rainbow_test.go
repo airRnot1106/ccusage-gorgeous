@@ -236,6 +236,53 @@ func TestRainbowAnimationPlugin_GenerateFrame_PulsePattern(t *testing.T) {
 	}
 }
 
+func TestRainbowAnimationPlugin_PulsePattern_UsesAllColors(t *testing.T) {
+	plugin := animation.NewRainbowAnimationPlugin()
+	ctx := context.Background()
+
+	// Initialize plugin
+	err := plugin.Initialize(map[string]interface{}{})
+	assert.NoError(t, err)
+
+	// Test with 12 rainbow colors (like in config.yaml)
+	rainbowColors := []string{
+		"#FF0000", "#FF8000", "#FFFF00", "#80FF00",
+		"#00FF00", "#00FF80", "#00FFFF", "#0080FF",
+		"#0000FF", "#8000FF", "#FF00FF", "#FF0080",
+	}
+
+	config := &domain.AnimationConfig{
+		Speed:   100 * time.Millisecond,
+		Colors:  rainbowColors,
+		Enabled: true,
+		Pattern: domain.PatternPulse,
+	}
+
+	// Track which colors are used over multiple frames
+	usedColors := make(map[string]bool)
+
+	// Generate 100 frames to ensure we cycle through colors
+	for frameNum := 0; frameNum < 100; frameNum++ {
+		frame, err := plugin.GenerateFrame(ctx, "$99.99", frameNum, config)
+		assert.NoError(t, err)
+
+		// All characters should have the same color in pulse pattern
+		frameColor := frame.Colors[0]
+		for _, color := range frame.Colors {
+			assert.Equal(t, frameColor, color, "All characters should have same color in frame %d", frameNum)
+		}
+
+		// Track the color used in this frame
+		usedColors[frameColor] = true
+	}
+
+	// Should use more than just 2 colors (current implementation uses only red and orange)
+	assert.Greater(t, len(usedColors), 2, "Pulse pattern should use more than 2 colors from the rainbow palette")
+
+	// Eventually should use a significant portion of the available colors
+	assert.GreaterOrEqual(t, len(usedColors), 6, "Pulse pattern should cycle through multiple colors over time")
+}
+
 func TestRainbowAnimationPlugin_GenerateFrame_WavePattern(t *testing.T) {
 	plugin := animation.NewRainbowAnimationPlugin()
 	ctx := context.Background()
@@ -301,5 +348,90 @@ func TestRainbowAnimationPlugin_GenerateFrame_SingleColor(t *testing.T) {
 	// All colors should be the same
 	for _, color := range frame.Colors {
 		assert.Equal(t, "#FF0000", color)
+	}
+}
+
+func TestRainbowAnimationPlugin_GenerateFrame_PulsePattern_ColorCycling(t *testing.T) {
+	plugin := animation.NewRainbowAnimationPlugin()
+	ctx := context.Background()
+
+	// Initialize plugin
+	err := plugin.Initialize(map[string]interface{}{})
+	assert.NoError(t, err)
+
+	// Use all 12 colors from config
+	allColors := []string{
+		"#FF0000", "#FF8000", "#FFFF00", "#80FF00",
+		"#00FF00", "#00FF80", "#00FFFF", "#0080FF",
+		"#0000FF", "#8000FF", "#FF00FF", "#FF0080",
+	}
+
+	config := &domain.AnimationConfig{
+		Speed:   100 * time.Millisecond,
+		Colors:  allColors,
+		Enabled: true,
+		Pattern: domain.PatternPulse,
+	}
+
+	// Test multiple frames to verify color cycling
+	var usedColors []string
+	frameCount := 100 // Test enough frames to cycle through colors
+
+	for i := 0; i < frameCount; i++ {
+		frame, err := plugin.GenerateFrame(ctx, "test", i, config)
+		assert.NoError(t, err)
+		assert.Equal(t, "test", frame.Text)
+		assert.Len(t, frame.Colors, 4)
+
+		// All colors in the frame should be the same (pulse pattern consistency)
+		firstColor := frame.Colors[0]
+		for _, color := range frame.Colors {
+			assert.Equal(t, firstColor, color)
+		}
+
+		// Collect used colors to verify cycling
+		usedColors = append(usedColors, firstColor)
+	}
+
+	// Verify that multiple colors were used (not stuck on first two)
+	uniqueColors := make(map[string]bool)
+	for _, color := range usedColors {
+		uniqueColors[color] = true
+	}
+
+	// Should use more than just the first 2 colors
+	assert.Greater(t, len(uniqueColors), 2, "Pulse pattern should cycle through multiple colors, not just the first two")
+
+	// All used colors should be from the original color set
+	for color := range uniqueColors {
+		assert.Contains(t, allColors, color)
+	}
+}
+
+func TestRainbowAnimationPlugin_GenerateFrame_PulsePattern_ConsistentFrameColors(t *testing.T) {
+	plugin := animation.NewRainbowAnimationPlugin()
+	ctx := context.Background()
+
+	// Initialize plugin
+	err := plugin.Initialize(map[string]interface{}{})
+	assert.NoError(t, err)
+
+	config := &domain.AnimationConfig{
+		Speed:   100 * time.Millisecond,
+		Colors:  []string{"#FF0000", "#00FF00", "#0000FF", "#FFFF00"},
+		Enabled: true,
+		Pattern: domain.PatternPulse,
+	}
+
+	// Test that all characters in a single frame have the same color
+	frame, err := plugin.GenerateFrame(ctx, "hello world test", 5, config)
+	assert.NoError(t, err)
+	assert.Equal(t, "hello world test", frame.Text)
+	assert.Len(t, frame.Colors, len("hello world test"))
+
+	// All colors should be identical within the same frame
+	expectedColor := frame.Colors[0]
+	for i, color := range frame.Colors {
+		assert.Equal(t, expectedColor, color, "All colors in pulse pattern should be the same, but color at index %d was different", i)
 	}
 }

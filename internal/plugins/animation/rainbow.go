@@ -187,26 +187,22 @@ func (r *RainbowAnimationPlugin) generateGradientColors(frameNumber, textLength 
 	return colors
 }
 
-// generatePulseColors generates pulsing colors
+// generatePulseColors generates pulsing colors that cycle through all available colors
 func (r *RainbowAnimationPlugin) generatePulseColors(frameNumber, textLength int, baseColors []string) []string {
 	if len(baseColors) == 0 {
 		return []string{"#FFFFFF"}
 	}
 
-	// Pulse between first and second color (or just first if only one)
-	pulseValue := math.Sin(float64(frameNumber) * 0.2)
-	var currentColor string
+	// Calculate which color to use based on frame number
+	// Use a pulsing pattern that cycles through all colors smoothly
+	colorCycleSpeed := 0.1 // Speed at which we cycle through colors
+	colorProgress := float64(frameNumber) * colorCycleSpeed
+	colorIndex := int(colorProgress) % len(baseColors)
 
-	if len(baseColors) >= 2 {
-		if pulseValue > 0 {
-			currentColor = baseColors[0]
-		} else {
-			currentColor = baseColors[1]
-		}
-	} else {
-		currentColor = baseColors[0]
-	}
+	// Use the calculated color for all characters (maintaining pulse unity)
+	currentColor := baseColors[colorIndex]
 
+	// All characters get the same color for true pulse effect
 	colors := make([]string, textLength)
 	for i := 0; i < textLength; i++ {
 		colors[i] = currentColor
