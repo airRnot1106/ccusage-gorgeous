@@ -16,7 +16,7 @@ func TestCLIFlags_AnimationOptionsIntegration(t *testing.T) {
 	}
 
 	// Parse flags
-	flagConfig, err := core.ParseFlagsFromArgs(args)
+	flagConfig, err := core.ParseCobraFlagsFromArgs(args)
 	assert.NoError(t, err)
 
 	// Create config manager and apply flags
@@ -39,7 +39,7 @@ func TestCLIFlags_NoAnimationIntegration(t *testing.T) {
 	args := []string{"--no-animation"}
 
 	// Parse flags
-	flagConfig, err := core.ParseFlagsFromArgs(args)
+	flagConfig, err := core.ParseCobraFlagsFromArgs(args)
 	assert.NoError(t, err)
 
 	// Create config manager and apply flags
@@ -60,7 +60,7 @@ func TestCLIFlags_BankruptcyIntegration(t *testing.T) {
 	args := []string{"--bankruptcy"}
 
 	// Parse flags
-	flagConfig, err := core.ParseFlagsFromArgs(args)
+	flagConfig, err := core.ParseCobraFlagsFromArgs(args)
 	assert.NoError(t, err)
 
 	// Create config manager and apply flags
@@ -111,7 +111,7 @@ func TestCLIFlags_EndToEndValidation(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			// This should not panic or error - simulating main.go flow
-			flagConfig, err := core.ParseFlagsFromArgs(tc.args)
+			flagConfig, err := core.ParseCobraFlagsFromArgs(tc.args)
 			assert.NoError(t, err, "Flag parsing should succeed")
 
 			configManager := core.NewConfigManager()
@@ -162,7 +162,7 @@ func TestCLIFlags_UnsupportedOptions(t *testing.T) {
 	for _, tt := range unsupportedFlags {
 		t.Run(tt.name, func(t *testing.T) {
 			// These flags should cause an error
-			_, err := core.ParseFlagsFromArgs(tt.args)
+			_, err := core.ParseCobraFlagsFromArgs(tt.args)
 			assert.Error(t, err, "Unsupported flag should cause an error")
 		})
 	}

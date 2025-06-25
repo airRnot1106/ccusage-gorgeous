@@ -35,8 +35,8 @@
           packages.default = pkgs.buildGoModule {
             pname = "ccugorg";
             version = "0.0.1";
-            src = ./.;
-            vendorHash = "sha256-EooE8SGcDjk+V88c/N5csE+xq8An05K81B1V3OlT/hE=";
+            src = lib.cleanSource ./.;
+            vendorHash = "sha256-ZYY5VCbGmSQWhcAaPXMFgq4LWOa9jQ/gDt4zJjLzBco=";
 
             postInstall = ''
               mv $out/bin/ccusage-gorgeous $out/bin/ccugorg
