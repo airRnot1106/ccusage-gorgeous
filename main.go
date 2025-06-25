@@ -53,13 +53,11 @@ func main() {
 
 	// Update configuration for bankruptcy mode
 	if bankruptcyMode {
-		log.Printf("Enabling bankruptcy mode, updating config to use bankruptcy-datasource")
 		if err := configManager.UpdateConfig(map[string]interface{}{
 			"plugins.datasource": "bankruptcy-datasource",
 		}); err != nil {
 			log.Fatalf("Failed to update config for bankruptcy mode: %v", err)
 		}
-		log.Printf("Config updated successfully for bankruptcy mode")
 	}
 
 	// Initialize plugin registry
@@ -138,8 +136,7 @@ func initializePlugins(registry *core.PluginRegistry) error {
 			return fmt.Errorf("failed to initialize plugin '%s': %w", plugin.Name(), err)
 		}
 
-		log.Printf("Initialized plugin: %s v%s - %s",
-			plugin.Name(), plugin.Version(), plugin.Description())
+		// Plugin initialized silently
 	}
 
 	return nil
@@ -162,10 +159,7 @@ func verifyRequiredPlugins(registry *core.PluginRegistry) error {
 		return fmt.Errorf("active animation plugin not available: %w", err)
 	}
 
-	// Get plugin counts for info
-	dataSourceCount, displayCount, animationCount := registry.GetPluginCount()
-	log.Printf("Loaded plugins: %d data sources, %d displays, %d animations",
-		dataSourceCount, displayCount, animationCount)
+	// Plugin verification completed silently
 
 	return nil
 }
