@@ -173,6 +173,4 @@ func printUsage() {
 	fmt.Fprintf(os.Stderr, "        Animation pattern (rainbow, gradient, pulse, wave)\n")
 	fmt.Fprintf(os.Stderr, "  --no-animation\n")
 	fmt.Fprintf(os.Stderr, "        Disable animation\n")
-	fmt.Fprintf(os.Stderr, "  --bankruptcy\n")
-	fmt.Fprintf(os.Stderr, "        Enable bankruptcy mode\n")
 }
