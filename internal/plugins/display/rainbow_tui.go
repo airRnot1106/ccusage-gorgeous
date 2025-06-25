@@ -70,30 +70,25 @@ func (r *RainbowTUIPlugin) Render(ctx context.Context, data *domain.DisplayData)
 		return "", fmt.Errorf("display data cannot be nil")
 	}
 
-	// Render based on format
-	switch data.Config.Format {
-	case domain.FormatLarge:
-		return r.renderLarge(data)
-	case domain.FormatMedium:
-		return r.renderMedium(data)
-	case domain.FormatSmall:
-		return r.renderSmall(data)
-	case domain.FormatMinimal:
-		return r.renderMinimal(data)
-	default:
-		return r.renderLarge(data)
+	if data.Cost == nil {
+		return "", nil
 	}
+
+	// Generate ASCII art for the cost
+	asciiArt := r.generateASCIIArt(data.Cost.TotalCost, data.Config.Size.Width, data.Config.Size.Height)
+	centeredAsciiArt := r.centerASCIIArt(asciiArt, data.Config.Size.Width, data.Config.Size.Height)
+
+	// Apply rainbow colors if animation is available
+	if data.Animation != nil {
+		return r.applyRainbowColors(centeredAsciiArt, data.Animation), nil
+	}
+
+	return centeredAsciiArt, nil
 }
 
 // GetCapabilities returns the display capabilities
 func (r *RainbowTUIPlugin) GetCapabilities() interfaces.DisplayCapabilities {
 	return interfaces.DisplayCapabilities{
-		SupportedFormats: []domain.DisplayFormat{
-			domain.FormatLarge,
-			domain.FormatMedium,
-			domain.FormatSmall,
-			domain.FormatMinimal,
-		},
 		MaxWidth:        200,
 		MaxHeight:       50,
 		SupportsColor:   true,
@@ -109,18 +104,6 @@ func (r *RainbowTUIPlugin) ValidateDisplayConfig(config *domain.DisplayConfig) e
 
 	capabilities := r.GetCapabilities()
 
-	// Check if format is supported
-	formatSupported := false
-	for _, format := range capabilities.SupportedFormats {
-		if config.Format == format {
-			formatSupported = true
-			break
-		}
-	}
-	if !formatSupported {
-		return fmt.Errorf("unsupported display format: %s", config.Format)
-	}
-
 	// Check dimensions
 	if config.Size.Width > capabilities.MaxWidth {
 		return fmt.Errorf("width %d exceeds maximum %d", config.Size.Width, capabilities.MaxWidth)
@@ -132,56 +115,38 @@ func (r *RainbowTUIPlugin) ValidateDisplayConfig(config *domain.DisplayConfig) e
 	return nil
 }
 
-// renderLarge renders the large format display
-func (r *RainbowTUIPlugin) renderLarge(data *domain.DisplayData) (string, error) {
-	if data.Cost == nil {
-		return "", nil
+// generateASCIIArt converts a dollar amount to ASCII art
+func (r *RainbowTUIPlugin) generateASCIIArt(amount float64, width, height int) string {
+	text := fmt.Sprintf("$%.2f", amount)
+
+	// Choose pattern set based on available size
+	var patterns map[rune][]string
+	var numRows int
+
+	// Use small patterns for smaller areas
+	if width < 40 || height < 12 {
+		patterns = r.getSmallLetterPatterns()
+		numRows = 7
+	} else {
+		patterns = r.getLargeLetterPatterns()
+		numRows = 10
 	}
 
-	asciiArt := r.generateASCIIArtWithSize(data.Cost.TotalCost, data.Config.Size.Width, data.Config.Size.Height)
-	centeredAsciiArt := r.centerASCIIArt(asciiArt, data.Config.Size.Width, data.Config.Size.Height)
-	rainbowAsciiArt := r.applyRainbowColors(centeredAsciiArt, data.Animation)
-
-	return rainbowAsciiArt, nil
-}
-
-// renderMedium renders the medium format display
-func (r *RainbowTUIPlugin) renderMedium(data *domain.DisplayData) (string, error) {
-	if data.Cost == nil {
-		return "", nil
+	// Build ASCII art line by line with spacing between characters
+	lines := make([]string, numRows)
+	for charIndex, char := range text {
+		if pattern, exists := patterns[char]; exists {
+			for i, line := range pattern {
+				lines[i] += line
+				// Add spacing between characters (except for the last character)
+				if charIndex < len(text)-1 {
+					lines[i] += "  " // 2 spaces between characters
+				}
+			}
+		}
 	}
 
-	asciiArt := r.generateASCIIArtWithSize(data.Cost.TotalCost, data.Config.Size.Width, data.Config.Size.Height)
-	centeredAsciiArt := r.centerASCIIArt(asciiArt, data.Config.Size.Width, data.Config.Size.Height)
-	rainbowAsciiArt := r.applyRainbowColors(centeredAsciiArt, data.Animation)
-
-	return rainbowAsciiArt, nil
-}
-
-// renderSmall renders the small format display
-func (r *RainbowTUIPlugin) renderSmall(data *domain.DisplayData) (string, error) {
-	if data.Cost == nil {
-		return "", nil
-	}
-
-	asciiArt := r.generateASCIIArtWithSize(data.Cost.TotalCost, data.Config.Size.Width, data.Config.Size.Height)
-	centeredAsciiArt := r.centerASCIIArt(asciiArt, data.Config.Size.Width, data.Config.Size.Height)
-	rainbowAsciiArt := r.applyRainbowColors(centeredAsciiArt, data.Animation)
-
-	return rainbowAsciiArt, nil
-}
-
-// renderMinimal renders the minimal format display
-func (r *RainbowTUIPlugin) renderMinimal(data *domain.DisplayData) (string, error) {
-	if data.Cost == nil {
-		return "", nil
-	}
-
-	asciiArt := r.generateASCIIArtWithSize(data.Cost.TotalCost, data.Config.Size.Width, data.Config.Size.Height)
-	centeredAsciiArt := r.centerASCIIArt(asciiArt, data.Config.Size.Width, data.Config.Size.Height)
-	rainbowAsciiArt := r.applyRainbowColors(centeredAsciiArt, data.Animation)
-
-	return rainbowAsciiArt, nil
+	return strings.Join(lines, "\n")
 }
 
 // centerASCIIArt centers ASCII art both horizontally and vertically within given dimensions
@@ -237,6 +202,31 @@ func (r *RainbowTUIPlugin) centerASCIIArt(asciiArt string, width, height int) st
 	}
 
 	return result.String()
+}
+
+// applyRainbowColors applies rainbow colors to text based on animation frame
+func (r *RainbowTUIPlugin) applyRainbowColors(text string, animation *domain.AnimationFrame) string {
+	if animation == nil || len(animation.Colors) == 0 {
+		return text
+	}
+
+	var styledText strings.Builder
+	lines := strings.Split(text, "\n")
+
+	for lineIndex, line := range lines {
+		for i, char := range line {
+			colorIndex := (lineIndex*len(line) + i) % len(animation.Colors)
+			color := animation.Colors[colorIndex]
+
+			charStyle := lipgloss.NewStyle().Foreground(lipgloss.Color(color))
+			styledText.WriteString(charStyle.Render(string(char)))
+		}
+		if lineIndex < len(lines)-1 {
+			styledText.WriteString("\n")
+		}
+	}
+
+	return styledText.String()
 }
 
 // getSmallLetterPatterns returns small ASCII art patterns for small screens
@@ -522,63 +512,4 @@ func (r *RainbowTUIPlugin) getLargeLetterPatterns() map[rune][]string {
 			"              ",
 		},
 	}
-}
-
-// generateASCIIArtWithSize converts a dollar amount to ASCII art with specified size
-func (r *RainbowTUIPlugin) generateASCIIArtWithSize(amount float64, width, height int) string {
-	text := fmt.Sprintf("$%.2f", amount)
-
-	// Choose pattern set based on screen size
-	var patterns map[rune][]string
-	var numRows int
-
-	// Use small patterns for smaller screens
-	if width < 100 || height < 25 {
-		patterns = r.getSmallLetterPatterns()
-		numRows = 7
-	} else {
-		patterns = r.getLargeLetterPatterns()
-		numRows = 10
-	}
-
-	// Build ASCII art line by line with spacing between characters
-	lines := make([]string, numRows)
-	for charIndex, char := range text {
-		if pattern, exists := patterns[char]; exists {
-			for i, line := range pattern {
-				lines[i] += line
-				// Add spacing between characters (except for the last character)
-				if charIndex < len(text)-1 {
-					lines[i] += "  " // 2 spaces between characters
-				}
-			}
-		}
-	}
-
-	return strings.Join(lines, "\n")
-}
-
-// applyRainbowColors applies rainbow colors to text based on animation frame
-func (r *RainbowTUIPlugin) applyRainbowColors(text string, animation *domain.AnimationFrame) string {
-	if animation == nil || len(animation.Colors) == 0 {
-		return text
-	}
-
-	var styledText strings.Builder
-	lines := strings.Split(text, "\n")
-
-	for lineIndex, line := range lines {
-		for i, char := range line {
-			colorIndex := (lineIndex*len(line) + i) % len(animation.Colors)
-			color := animation.Colors[colorIndex]
-
-			charStyle := lipgloss.NewStyle().Foreground(lipgloss.Color(color))
-			styledText.WriteString(charStyle.Render(string(char)))
-		}
-		if lineIndex < len(lines)-1 {
-			styledText.WriteString("\n")
-		}
-	}
-
-	return styledText.String()
 }

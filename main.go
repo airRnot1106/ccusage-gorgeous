@@ -29,14 +29,8 @@ func main() {
 		log.Fatalf("Failed to parse command line flags: %v", err)
 	}
 
-	// Check for bankruptcy mode in the arguments manually
-	bankruptcyMode := false
-	for _, arg := range os.Args[1:] {
-		if arg == "--bankruptcy" {
-			bankruptcyMode = true
-			break
-		}
-	}
+	// Get bankruptcy mode from parsed flags
+	bankruptcyMode := flagConfig.Bankruptcy
 
 	// Create context
 	ctx := context.Background()
@@ -179,24 +173,12 @@ func verifyRequiredPlugins(registry *core.PluginRegistry) error {
 // printUsage prints the usage information
 func printUsage() {
 	fmt.Fprintf(os.Stderr, "Usage of %s:\n", "ccugorg")
-	fmt.Fprintf(os.Stderr, "  --format string\n")
-	fmt.Fprintf(os.Stderr, "        Display format (large, medium, small, minimal)\n")
-	fmt.Fprintf(os.Stderr, "  --width int\n")
-	fmt.Fprintf(os.Stderr, "        Display width\n")
-	fmt.Fprintf(os.Stderr, "  --height int\n")
-	fmt.Fprintf(os.Stderr, "        Display height\n")
-	fmt.Fprintf(os.Stderr, "  --show-timestamp\n")
-	fmt.Fprintf(os.Stderr, "        Show timestamp\n")
-	fmt.Fprintf(os.Stderr, "  --no-timestamp\n")
-	fmt.Fprintf(os.Stderr, "        Hide timestamp\n")
-	fmt.Fprintf(os.Stderr, "  --show-breakdown\n")
-	fmt.Fprintf(os.Stderr, "        Show breakdown\n")
-	fmt.Fprintf(os.Stderr, "  --no-breakdown\n")
-	fmt.Fprintf(os.Stderr, "        Hide breakdown\n")
 	fmt.Fprintf(os.Stderr, "  --animation-speed string\n")
 	fmt.Fprintf(os.Stderr, "        Animation speed (e.g., 100ms)\n")
 	fmt.Fprintf(os.Stderr, "  --animation-pattern string\n")
 	fmt.Fprintf(os.Stderr, "        Animation pattern (rainbow, gradient, pulse, wave)\n")
 	fmt.Fprintf(os.Stderr, "  --no-animation\n")
 	fmt.Fprintf(os.Stderr, "        Disable animation\n")
+	fmt.Fprintf(os.Stderr, "  --bankruptcy\n")
+	fmt.Fprintf(os.Stderr, "        Enable bankruptcy mode\n")
 }

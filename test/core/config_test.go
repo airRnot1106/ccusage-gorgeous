@@ -27,11 +27,8 @@ func TestConfigManager_LoadConfig_Defaults(t *testing.T) {
 	assert.NotNil(t, config)
 	assert.Equal(t, "info", config.App.LogLevel)
 	assert.Equal(t, 1*time.Second, config.App.RefreshRate)
-	assert.Equal(t, domain.FormatLarge, config.Display.Format)
 	assert.Equal(t, 80, config.Display.Width)
 	assert.Equal(t, 24, config.Display.Height)
-	assert.True(t, config.Display.ShowTimestamp)
-	assert.True(t, config.Display.ShowBreakdown)
 	assert.True(t, config.Animation.Enabled)
 	assert.Equal(t, 100*time.Millisecond, config.Animation.Speed)
 	assert.Equal(t, domain.PatternRainbow, config.Animation.Pattern)
@@ -83,11 +80,8 @@ plugins:
 	assert.NotNil(t, config)
 	assert.Equal(t, "debug", config.App.LogLevel)
 	assert.Equal(t, 2*time.Second, config.App.RefreshRate)
-	assert.Equal(t, domain.FormatMedium, config.Display.Format)
 	assert.Equal(t, 120, config.Display.Width)
 	assert.Equal(t, 30, config.Display.Height)
-	assert.False(t, config.Display.ShowTimestamp)
-	assert.False(t, config.Display.ShowBreakdown)
 	assert.False(t, config.Animation.Enabled)
 	assert.Equal(t, 200*time.Millisecond, config.Animation.Speed)
 	assert.Equal(t, domain.PatternGradient, config.Animation.Pattern)
@@ -127,9 +121,6 @@ func TestConfigManager_GetDisplayConfig(t *testing.T) {
 	displayConfig := cm.GetDisplayConfig()
 	assert.NotNil(t, displayConfig)
 	assert.Equal(t, 1*time.Second, displayConfig.RefreshRate)
-	assert.True(t, displayConfig.ShowTimestamp)
-	assert.True(t, displayConfig.ShowBreakdown)
-	assert.Equal(t, domain.FormatLarge, displayConfig.Format)
 	assert.Equal(t, 80, displayConfig.Size.Width)
 	assert.Equal(t, 24, displayConfig.Size.Height)
 }
@@ -201,23 +192,7 @@ func TestConfigManager_ValidateConfig(t *testing.T) {
 	assert.NoError(t, err)
 }
 
-func TestConfigManager_ValidateConfig_InvalidFormat(t *testing.T) {
-	cm := core.NewConfigManager()
-	err := cm.LoadConfig("")
-	assert.NoError(t, err)
-
-	// Update with invalid display format
-	updates := map[string]interface{}{
-		"display.format": "invalid-format",
-	}
-	err = cm.UpdateConfig(updates)
-	assert.NoError(t, err)
-
-	// Should fail validation
-	err = cm.ValidateConfig()
-	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "invalid display format")
-}
+// Format validation test removed since display formats are no longer supported
 
 func TestConfigManager_ValidateConfig_InvalidPattern(t *testing.T) {
 	cm := core.NewConfigManager()

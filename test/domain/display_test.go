@@ -10,10 +10,7 @@ import (
 
 func TestDisplayConfig_Creation(t *testing.T) {
 	config := &domain.DisplayConfig{
-		RefreshRate:   1 * time.Second,
-		ShowTimestamp: true,
-		ShowBreakdown: true,
-		Format:        domain.FormatLarge,
+		RefreshRate: 1 * time.Second,
 		Size: domain.DisplaySize{
 			Width:  80,
 			Height: 24,
@@ -21,19 +18,11 @@ func TestDisplayConfig_Creation(t *testing.T) {
 	}
 
 	assert.Equal(t, 1*time.Second, config.RefreshRate)
-	assert.True(t, config.ShowTimestamp)
-	assert.True(t, config.ShowBreakdown)
-	assert.Equal(t, domain.FormatLarge, config.Format)
 	assert.Equal(t, 80, config.Size.Width)
 	assert.Equal(t, 24, config.Size.Height)
 }
 
-func TestDisplayFormat_Constants(t *testing.T) {
-	assert.Equal(t, domain.DisplayFormat("large"), domain.FormatLarge)
-	assert.Equal(t, domain.DisplayFormat("medium"), domain.FormatMedium)
-	assert.Equal(t, domain.DisplayFormat("small"), domain.FormatSmall)
-	assert.Equal(t, domain.DisplayFormat("minimal"), domain.FormatMinimal)
-}
+// TestDisplayFormat_Constants removed - DisplayFormat enum no longer exists
 
 func TestDisplaySize_Creation(t *testing.T) {
 	size := domain.DisplaySize{
@@ -61,11 +50,8 @@ func TestDisplayData_Creation(t *testing.T) {
 	}
 
 	config := &domain.DisplayConfig{
-		RefreshRate:   500 * time.Millisecond,
-		ShowTimestamp: true,
-		ShowBreakdown: false,
-		Format:        domain.FormatMedium,
-		Size:          domain.DisplaySize{Width: 80, Height: 24},
+		RefreshRate: 500 * time.Millisecond,
+		Size:        domain.DisplaySize{Width: 80, Height: 24},
 	}
 
 	displayData := &domain.DisplayData{
@@ -99,10 +85,7 @@ func (m *MockDisplayService) Render(data *domain.DisplayData) (string, error) {
 func (m *MockDisplayService) GetDefaultConfig() *domain.DisplayConfig {
 	if m.mockConfig == nil {
 		return &domain.DisplayConfig{
-			RefreshRate:   1 * time.Second,
-			ShowTimestamp: true,
-			ShowBreakdown: true,
-			Format:        domain.FormatLarge,
+			RefreshRate: 1 * time.Second,
 			Size: domain.DisplaySize{
 				Width:  80,
 				Height: 24,
@@ -148,7 +131,6 @@ func TestDisplayService_Interface(t *testing.T) {
 	config := service.GetDefaultConfig()
 	assert.NotNil(t, config)
 	assert.Equal(t, 1*time.Second, config.RefreshRate)
-	assert.Equal(t, domain.FormatLarge, config.Format)
 	assert.Equal(t, 80, config.Size.Width)
 	assert.Equal(t, 24, config.Size.Height)
 
@@ -178,26 +160,7 @@ func TestDisplayData_WithNilValues(t *testing.T) {
 	assert.False(t, displayData.LastUpdated.IsZero())
 }
 
-func TestDisplayConfig_WithDifferentFormats(t *testing.T) {
-	formats := []domain.DisplayFormat{
-		domain.FormatLarge,
-		domain.FormatMedium,
-		domain.FormatSmall,
-		domain.FormatMinimal,
-	}
-
-	for _, format := range formats {
-		config := &domain.DisplayConfig{
-			RefreshRate:   1 * time.Second,
-			ShowTimestamp: true,
-			ShowBreakdown: true,
-			Format:        format,
-			Size:          domain.DisplaySize{Width: 80, Height: 24},
-		}
-
-		assert.Equal(t, format, config.Format)
-	}
-}
+// TestDisplayConfig_WithDifferentFormats removed - DisplayFormat enum no longer exists
 
 func TestDisplaySize_EdgeCases(t *testing.T) {
 	// Test zero size

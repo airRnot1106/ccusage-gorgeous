@@ -6,22 +6,9 @@ import (
 
 // DisplayConfig represents the display configuration
 type DisplayConfig struct {
-	RefreshRate   time.Duration `json:"refresh_rate"`
-	ShowTimestamp bool          `json:"show_timestamp"`
-	ShowBreakdown bool          `json:"show_breakdown"`
-	Format        DisplayFormat `json:"format"`
-	Size          DisplaySize   `json:"size"`
+	RefreshRate time.Duration `json:"refresh_rate"`
+	Size        DisplaySize   `json:"size"`
 }
-
-// DisplayFormat defines the display format options
-type DisplayFormat string
-
-const (
-	FormatLarge   DisplayFormat = "large"
-	FormatMedium  DisplayFormat = "medium"
-	FormatSmall   DisplayFormat = "small"
-	FormatMinimal DisplayFormat = "minimal"
-)
 
 // DisplaySize defines the display size configuration
 type DisplaySize struct {

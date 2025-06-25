@@ -211,11 +211,10 @@ func TestDataSourcePlugin_Interface(t *testing.T) {
 // Test DisplayPlugin interface
 func TestDisplayPlugin_Interface(t *testing.T) {
 	capabilities := interfaces.DisplayCapabilities{
-		SupportedFormats: []domain.DisplayFormat{domain.FormatLarge, domain.FormatMedium},
-		MaxWidth:         120,
-		MaxHeight:        40,
-		SupportsColor:    true,
-		SupportsUnicode:  true,
+		MaxWidth:        120,
+		MaxHeight:       40,
+		SupportsColor:   true,
+		SupportsUnicode: true,
 	}
 
 	plugin := &MockDisplayPlugin{
@@ -247,7 +246,6 @@ func TestDisplayPlugin_Interface(t *testing.T) {
 
 	// Test GetCapabilities
 	caps := plugin.GetCapabilities()
-	assert.Len(t, caps.SupportedFormats, 2)
 	assert.Equal(t, 120, caps.MaxWidth)
 	assert.Equal(t, 40, caps.MaxHeight)
 	assert.True(t, caps.SupportsColor)
@@ -255,8 +253,8 @@ func TestDisplayPlugin_Interface(t *testing.T) {
 
 	// Test ValidateDisplayConfig
 	config := &domain.DisplayConfig{
-		Format: domain.FormatLarge,
-		Size:   domain.DisplaySize{Width: 80, Height: 24},
+		RefreshRate: 1 * time.Second,
+		Size:        domain.DisplaySize{Width: 80, Height: 24},
 	}
 	err = plugin.ValidateDisplayConfig(config)
 	assert.NoError(t, err)
@@ -330,18 +328,12 @@ func TestAnimationPlugin_Interface(t *testing.T) {
 // Test DisplayCapabilities
 func TestDisplayCapabilities(t *testing.T) {
 	capabilities := interfaces.DisplayCapabilities{
-		SupportedFormats: []domain.DisplayFormat{
-			domain.FormatLarge,
-			domain.FormatMedium,
-			domain.FormatSmall,
-		},
 		MaxWidth:        200,
 		MaxHeight:       50,
 		SupportsColor:   true,
 		SupportsUnicode: false,
 	}
 
-	assert.Len(t, capabilities.SupportedFormats, 3)
 	assert.Equal(t, 200, capabilities.MaxWidth)
 	assert.Equal(t, 50, capabilities.MaxHeight)
 	assert.True(t, capabilities.SupportsColor)

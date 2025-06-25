@@ -43,11 +43,10 @@ type AnimationPlugin interface {
 
 // DisplayCapabilities represents the capabilities of a display plugin
 type DisplayCapabilities struct {
-	SupportedFormats []domain.DisplayFormat `json:"supported_formats"`
-	MaxWidth         int                    `json:"max_width"`
-	MaxHeight        int                    `json:"max_height"`
-	SupportsColor    bool                   `json:"supports_color"`
-	SupportsUnicode  bool                   `json:"supports_unicode"`
+	MaxWidth        int  `json:"max_width"`
+	MaxHeight       int  `json:"max_height"`
+	SupportsColor   bool `json:"supports_color"`
+	SupportsUnicode bool `json:"supports_unicode"`
 }
 
 // PluginRegistry defines the interface for plugin management

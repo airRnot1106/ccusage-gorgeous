@@ -9,56 +9,81 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestDisplayFormatFlag(t *testing.T) {
-	tests := []struct {
-		name     string
-		args     []string
-		expected domain.DisplayFormat
-		wantErr  bool
+// TestRequiredFlags tests only the flags that should be supported
+func TestRequiredFlags_ShouldNotExist(t *testing.T) {
+	// Red phase: Test that unsupported flags are rejected
+	unsupportedFlags := []struct {
+		name string
+		args []string
 	}{
 		{
-			name:     "Large format flag",
-			args:     []string{"--format", "large"},
-			expected: domain.FormatLarge,
-			wantErr:  false,
+			name: "Format flag should not exist",
+			args: []string{"--format", "large"},
 		},
 		{
-			name:     "Medium format flag",
-			args:     []string{"--format", "medium"},
-			expected: domain.FormatMedium,
-			wantErr:  false,
+			name: "Width flag should not exist",
+			args: []string{"--width", "100"},
 		},
 		{
-			name:     "Small format flag",
-			args:     []string{"--format", "small"},
-			expected: domain.FormatSmall,
-			wantErr:  false,
+			name: "Height flag should not exist",
+			args: []string{"--height", "30"},
 		},
 		{
-			name:     "Minimal format flag",
-			args:     []string{"--format", "minimal"},
-			expected: domain.FormatMinimal,
-			wantErr:  false,
+			name: "Show timestamp flag should not exist",
+			args: []string{"--show-timestamp"},
 		},
 		{
-			name:     "Invalid format flag",
-			args:     []string{"--format", "invalid"},
-			expected: "",
-			wantErr:  true,
+			name: "No timestamp flag should not exist",
+			args: []string{"--no-timestamp"},
+		},
+		{
+			name: "Show breakdown flag should not exist",
+			args: []string{"--show-breakdown"},
+		},
+		{
+			name: "No breakdown flag should not exist",
+			args: []string{"--no-breakdown"},
 		},
 	}
 
-	for _, tt := range tests {
+	for _, tt := range unsupportedFlags {
 		t.Run(tt.name, func(t *testing.T) {
-			// Parse flags directly from test args
-			flagConfig, err := core.ParseFlagsFromArgs(tt.args)
+			// These flags should cause an error because they are not supported
+			_, err := core.ParseFlagsFromArgs(tt.args)
+			assert.Error(t, err, "Unsupported flag should cause an error")
+		})
+	}
+}
 
-			if tt.wantErr {
-				assert.Error(t, err)
-			} else {
-				assert.NoError(t, err)
-				assert.Equal(t, tt.expected, flagConfig.Display.Format)
-			}
+func TestSupportedFlags_ShouldWork(t *testing.T) {
+	// Test that only supported flags work correctly
+	supportedFlags := []struct {
+		name string
+		args []string
+	}{
+		{
+			name: "Animation speed flag should work",
+			args: []string{"--animation-speed", "50ms"},
+		},
+		{
+			name: "Animation pattern flag should work",
+			args: []string{"--animation-pattern", "rainbow"},
+		},
+		{
+			name: "No animation flag should work",
+			args: []string{"--no-animation"},
+		},
+		{
+			name: "Bankruptcy flag should work",
+			args: []string{"--bankruptcy"},
+		},
+	}
+
+	for _, tt := range supportedFlags {
+		t.Run(tt.name, func(t *testing.T) {
+			// These flags should not cause an error because they are supported
+			_, err := core.ParseFlagsFromArgs(tt.args)
+			assert.NoError(t, err, "Supported flag should not cause an error")
 		})
 	}
 }
@@ -182,9 +207,20 @@ func TestNoAnimationFlag(t *testing.T) {
 			// Parse flags directly from test args
 			flagConfig, err := core.ParseFlagsFromArgs(tt.args)
 			assert.NoError(t, err)
-			assert.Equal(t, tt.expected, *flagConfig.Animation.Enabled)
+			if flagConfig.Animation.Enabled != nil {
+				assert.Equal(t, tt.expected, *flagConfig.Animation.Enabled)
+			} else {
+				// If Enabled is nil, assume default enabled behavior
+				assert.True(t, tt.expected)
+			}
 		})
 	}
+}
+
+func TestBankruptcyFlag(t *testing.T) {
+	// Test that bankruptcy flag should work
+	_, err := core.ParseFlagsFromArgs([]string{"--bankruptcy"})
+	assert.NoError(t, err, "Bankruptcy flag should be supported")
 }
 
 func TestConfigOverrideOrder(t *testing.T) {
@@ -193,19 +229,17 @@ func TestConfigOverrideOrder(t *testing.T) {
 	err := configManager.LoadConfig("")
 	assert.NoError(t, err)
 
-	// Parse flags that should override config
-	flagConfig, err := core.ParseFlagsFromArgs([]string{"--format", "small", "--animation-speed", "50ms"})
+	// Parse flags that should override config (only supported flags)
+	flagConfig, err := core.ParseFlagsFromArgs([]string{"--animation-speed", "50ms", "--no-animation"})
 	assert.NoError(t, err)
 
 	err = configManager.ApplyFlagsToConfig(flagConfig)
 	assert.NoError(t, err)
 
 	// Command line flags should override config file values
-	displayConfig := configManager.GetDisplayConfig()
-	assert.Equal(t, domain.FormatSmall, displayConfig.Format)
-
 	animationConfig := configManager.GetAnimationConfig()
 	assert.Equal(t, 50*time.Millisecond, animationConfig.Speed)
+	assert.False(t, animationConfig.Enabled)
 }
 
 func TestInvalidFlagValues(t *testing.T) {
@@ -214,20 +248,12 @@ func TestInvalidFlagValues(t *testing.T) {
 		args []string
 	}{
 		{
-			name: "Invalid format value",
-			args: []string{"--format", "invalid"},
-		},
-		{
 			name: "Invalid animation speed",
 			args: []string{"--animation-speed", "invalid"},
 		},
 		{
 			name: "Invalid animation pattern",
 			args: []string{"--animation-pattern", "invalid"},
-		},
-		{
-			name: "Invalid width value (must be positive)",
-			args: []string{"--width", "-10"},
 		},
 	}
 

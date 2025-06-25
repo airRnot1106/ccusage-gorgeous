@@ -26,11 +26,8 @@ type AppConfig struct {
 
 // DisplayConfig represents display-specific settings
 type DisplayConfig struct {
-	Format        domain.DisplayFormat `mapstructure:"format"`
-	Width         int                  `mapstructure:"width"`
-	Height        int                  `mapstructure:"height"`
-	ShowTimestamp bool                 `mapstructure:"show_timestamp"`
-	ShowBreakdown bool                 `mapstructure:"show_breakdown"`
+	Width  int `mapstructure:"width"`
+	Height int `mapstructure:"height"`
 }
 
 // AnimationConfig represents animation-specific settings
@@ -148,10 +145,7 @@ func (cm *ConfigManager) GetDisplayConfig() *domain.DisplayConfig {
 	}
 
 	return &domain.DisplayConfig{
-		RefreshRate:   cm.config.App.RefreshRate,
-		ShowTimestamp: cm.config.Display.ShowTimestamp,
-		ShowBreakdown: cm.config.Display.ShowBreakdown,
-		Format:        cm.config.Display.Format,
+		RefreshRate: cm.config.App.RefreshRate,
 		Size: domain.DisplaySize{
 			Width:  cm.config.Display.Width,
 			Height: cm.config.Display.Height,
@@ -200,22 +194,7 @@ func (cm *ConfigManager) ValidateConfig() error {
 		return fmt.Errorf("no configuration loaded")
 	}
 
-	// Validate display format
-	validFormats := []domain.DisplayFormat{
-		domain.FormatLarge, domain.FormatMedium,
-		domain.FormatSmall, domain.FormatMinimal,
-	}
-
-	formatValid := false
-	for _, format := range validFormats {
-		if cm.config.Display.Format == format {
-			formatValid = true
-			break
-		}
-	}
-	if !formatValid {
-		return fmt.Errorf("invalid display format: %s", cm.config.Display.Format)
-	}
+	// Display format validation is no longer needed since we removed formats
 
 	// Validate animation pattern
 	validPatterns := []domain.AnimationPattern{
@@ -258,27 +237,6 @@ func (cm *ConfigManager) ApplyFlagsToConfig(flagConfig *FlagConfig) error {
 		return fmt.Errorf("no configuration loaded")
 	}
 
-	// Apply display configuration from flags
-	if flagConfig.Display.Format != "" {
-		cm.config.Display.Format = flagConfig.Display.Format
-	}
-
-	if flagConfig.Display.Width > 0 {
-		cm.config.Display.Width = flagConfig.Display.Width
-	}
-
-	if flagConfig.Display.Height > 0 {
-		cm.config.Display.Height = flagConfig.Display.Height
-	}
-
-	if flagConfig.Display.ShowTimestamp != nil {
-		cm.config.Display.ShowTimestamp = *flagConfig.Display.ShowTimestamp
-	}
-
-	if flagConfig.Display.ShowBreakdown != nil {
-		cm.config.Display.ShowBreakdown = *flagConfig.Display.ShowBreakdown
-	}
-
 	// Apply animation configuration from flags
 	if flagConfig.Animation.Speed > 0 {
 		cm.config.Animation.Speed = flagConfig.Animation.Speed
@@ -291,6 +249,9 @@ func (cm *ConfigManager) ApplyFlagsToConfig(flagConfig *FlagConfig) error {
 	if flagConfig.Animation.Enabled != nil {
 		cm.config.Animation.Enabled = *flagConfig.Animation.Enabled
 	}
+
+	// Apply bankruptcy mode (note: this affects datasource configuration)
+	// Bankruptcy mode is handled by the main application, not by configuration
 
 	return nil
 }

@@ -132,13 +132,17 @@ func TestApplicationIntegration(t *testing.T) {
 		}
 	})
 
-	// Test different display formats
-	t.Run("DisplayFormats", func(t *testing.T) {
-		formats := []domain.DisplayFormat{
-			domain.FormatLarge,
-			domain.FormatMedium,
-			domain.FormatSmall,
-			domain.FormatMinimal,
+	// Test different display configurations
+	t.Run("DisplayConfigurations", func(t *testing.T) {
+		configs := []struct {
+			name   string
+			width  int
+			height int
+		}{
+			{"Large", 120, 40},
+			{"Medium", 80, 24},
+			{"Small", 60, 20},
+			{"Minimal", 40, 10},
 		}
 
 		mockCostData := &domain.CostData{
@@ -147,15 +151,12 @@ func TestApplicationIntegration(t *testing.T) {
 			Timestamp: time.Now(),
 		}
 
-		for _, format := range formats {
+		for _, config := range configs {
 			displayConfig := &domain.DisplayConfig{
-				RefreshRate:   1 * time.Second,
-				ShowTimestamp: true,
-				ShowBreakdown: false,
-				Format:        format,
+				RefreshRate: 1 * time.Second,
 				Size: domain.DisplaySize{
-					Width:  80,
-					Height: 24,
+					Width:  config.width,
+					Height: config.height,
 				},
 			}
 
@@ -166,10 +167,10 @@ func TestApplicationIntegration(t *testing.T) {
 			}
 
 			output, err := activeDisplay.Render(ctx, displayData)
-			assert.NoError(t, err, "Format: %s", format)
+			assert.NoError(t, err, "Config: %s", config.name)
 
-			if format != domain.FormatSmall && format != domain.FormatMinimal || mockCostData != nil {
-				assert.NotEmpty(t, output, "Format: %s", format)
+			if config.width > 40 && config.height > 10 || mockCostData != nil {
+				assert.NotEmpty(t, output, "Config: %s", config.name)
 			}
 		}
 	})
@@ -201,7 +202,6 @@ func TestConfigurationEdgeCases(t *testing.T) {
 
 		// Test invalid values
 		updates := map[string]interface{}{
-			"display.format":    "invalid-format",
 			"animation.pattern": "invalid-pattern",
 			"display.width":     -1,
 			"animation.speed":   "-100ms",
@@ -280,8 +280,8 @@ func TestPluginInteraction(t *testing.T) {
 	t.Run("DisplayWithoutCostData", func(t *testing.T) {
 		// Display should handle missing cost data gracefully
 		displayConfig := &domain.DisplayConfig{
-			Format: domain.FormatSmall,
-			Size:   domain.DisplaySize{Width: 40, Height: 10},
+			RefreshRate: 1 * time.Second,
+			Size:        domain.DisplaySize{Width: 40, Height: 10},
 		}
 
 		displayData := &domain.DisplayData{
@@ -292,7 +292,7 @@ func TestPluginInteraction(t *testing.T) {
 
 		output, err := rainbowDisplayPlugin.Render(ctx, displayData)
 		assert.NoError(t, err)
-		// Small format with no cost data should return empty string
+		// Small display with no cost data should return empty string
 		assert.Empty(t, output)
 	})
 }
@@ -323,8 +323,8 @@ func TestErrorHandling(t *testing.T) {
 
 		displayData := &domain.DisplayData{
 			Config: &domain.DisplayConfig{
-				Format: domain.FormatSmall,
-				Size:   domain.DisplaySize{Width: 40, Height: 10},
+				RefreshRate: 1 * time.Second,
+				Size:        domain.DisplaySize{Width: 40, Height: 10},
 			},
 		}
 
