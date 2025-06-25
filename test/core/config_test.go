@@ -1,8 +1,6 @@
 package core_test
 
 import (
-	"os"
-	"path/filepath"
 	"testing"
 	"time"
 
@@ -19,8 +17,8 @@ func TestNewConfigManager(t *testing.T) {
 func TestConfigManager_LoadConfig_Defaults(t *testing.T) {
 	cm := core.NewConfigManager()
 
-	// Load with non-existent file should work with defaults
-	err := cm.LoadConfig("non-existent-file.yaml")
+	// LoadConfig is now a no-op but should still work for compatibility
+	err := cm.LoadConfig("")
 	assert.NoError(t, err)
 
 	config := cm.GetConfig()
@@ -35,83 +33,9 @@ func TestConfigManager_LoadConfig_Defaults(t *testing.T) {
 	assert.Len(t, config.Animation.Colors, 12)
 }
 
-func TestConfigManager_LoadConfig_FromFile(t *testing.T) {
-	// Create temporary config file
-	tempDir := t.TempDir()
-	configPath := filepath.Join(tempDir, "test-config.yaml")
+// TestConfigManager_LoadConfig_FromFile removed since file loading is no longer supported
 
-	configContent := `
-app:
-  log_level: "debug"
-  refresh_rate: "2s"
-
-display:
-  format: "medium"
-  width: 120
-  height: 30
-  show_timestamp: false
-  show_breakdown: false
-
-animation:
-  enabled: false
-  speed: "200ms"
-  pattern: "gradient"
-  colors: ["#FF0000", "#00FF00", "#0000FF"]
-
-datasource:
-  ccusage_path: "/usr/local/bin/ccusage"
-  timeout: "60s"
-  cache_time: "20s"
-
-plugins:
-  datasource: "custom-datasource"
-  display: "custom-display"
-  animation: "custom-animation"
-`
-
-	err := os.WriteFile(configPath, []byte(configContent), 0o644)
-	assert.NoError(t, err)
-
-	cm := core.NewConfigManager()
-	err = cm.LoadConfig(configPath)
-	assert.NoError(t, err)
-
-	config := cm.GetConfig()
-	assert.NotNil(t, config)
-	assert.Equal(t, "debug", config.App.LogLevel)
-	assert.Equal(t, 2*time.Second, config.App.RefreshRate)
-	assert.Equal(t, 120, config.Display.Width)
-	assert.Equal(t, 30, config.Display.Height)
-	assert.False(t, config.Animation.Enabled)
-	assert.Equal(t, 200*time.Millisecond, config.Animation.Speed)
-	assert.Equal(t, domain.PatternGradient, config.Animation.Pattern)
-	assert.Len(t, config.Animation.Colors, 3)
-	assert.Equal(t, "/usr/local/bin/ccusage", config.DataSource.CcusagePath)
-	assert.Equal(t, 60*time.Second, config.DataSource.Timeout)
-	assert.Equal(t, 20*time.Second, config.DataSource.CacheTime)
-	assert.Equal(t, "custom-datasource", config.Plugins.DataSource)
-	assert.Equal(t, "custom-display", config.Plugins.Display)
-	assert.Equal(t, "custom-animation", config.Plugins.Animation)
-}
-
-func TestConfigManager_LoadConfig_InvalidYAML(t *testing.T) {
-	// Create temporary invalid config file
-	tempDir := t.TempDir()
-	configPath := filepath.Join(tempDir, "invalid-config.yaml")
-
-	invalidContent := `
-app:
-  log_level: "debug
-  # Missing closing quote - invalid YAML
-`
-
-	err := os.WriteFile(configPath, []byte(invalidContent), 0o644)
-	assert.NoError(t, err)
-
-	cm := core.NewConfigManager()
-	err = cm.LoadConfig(configPath)
-	assert.Error(t, err)
-}
+// TestConfigManager_LoadConfig_InvalidYAML removed since file loading is no longer supported
 
 func TestConfigManager_GetDisplayConfig(t *testing.T) {
 	cm := core.NewConfigManager()
@@ -141,15 +65,15 @@ func TestConfigManager_GetAnimationConfig(t *testing.T) {
 func TestConfigManager_GetConfig_Nil(t *testing.T) {
 	cm := core.NewConfigManager()
 
-	// Before loading config, should return nil
+	// Config is now loaded with defaults in NewConfigManager
 	config := cm.GetConfig()
-	assert.Nil(t, config)
+	assert.NotNil(t, config)
 
 	displayConfig := cm.GetDisplayConfig()
-	assert.Nil(t, displayConfig)
+	assert.NotNil(t, displayConfig)
 
 	animationConfig := cm.GetAnimationConfig()
-	assert.Nil(t, animationConfig)
+	assert.NotNil(t, animationConfig)
 }
 
 func TestConfigManager_UpdateConfig(t *testing.T) {
@@ -157,37 +81,30 @@ func TestConfigManager_UpdateConfig(t *testing.T) {
 	err := cm.LoadConfig("")
 	assert.NoError(t, err)
 
-	// Update some values
+	// UpdateConfig now only supports plugin datasource updates
 	updates := map[string]interface{}{
-		"app.log_level":     "error",
-		"display.width":     100,
-		"animation.enabled": false,
-		"animation.pattern": "pulse",
+		"plugins.datasource": "bankruptcy-datasource",
 	}
 
 	err = cm.UpdateConfig(updates)
 	assert.NoError(t, err)
 
 	config := cm.GetConfig()
-	assert.Equal(t, "error", config.App.LogLevel)
-	assert.Equal(t, 100, config.Display.Width)
-	assert.False(t, config.Animation.Enabled)
-	assert.Equal(t, domain.PatternPulse, config.Animation.Pattern)
+	assert.Equal(t, "bankruptcy-datasource", config.Plugins.DataSource)
 }
 
 func TestConfigManager_ValidateConfig(t *testing.T) {
 	cm := core.NewConfigManager()
 
-	// Should error when no config is loaded
+	// Config is always loaded with defaults now, so validation should pass
 	err := cm.ValidateConfig()
-	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "no configuration loaded")
+	assert.NoError(t, err)
 
-	// Load valid config
+	// Load config (no-op but for compatibility)
 	err = cm.LoadConfig("")
 	assert.NoError(t, err)
 
-	// Should pass validation
+	// Should still pass validation
 	err = cm.ValidateConfig()
 	assert.NoError(t, err)
 }
@@ -199,12 +116,9 @@ func TestConfigManager_ValidateConfig_InvalidPattern(t *testing.T) {
 	err := cm.LoadConfig("")
 	assert.NoError(t, err)
 
-	// Update with invalid animation pattern
-	updates := map[string]interface{}{
-		"animation.pattern": "invalid-pattern",
-	}
-	err = cm.UpdateConfig(updates)
-	assert.NoError(t, err)
+	// Manually set invalid pattern for testing
+	config := cm.GetConfig()
+	config.Animation.Pattern = "invalid-pattern"
 
 	// Should fail validation
 	err = cm.ValidateConfig()
@@ -217,18 +131,15 @@ func TestConfigManager_ValidateConfig_InvalidDimensions(t *testing.T) {
 	err := cm.LoadConfig("")
 	assert.NoError(t, err)
 
-	// Update with invalid dimensions
-	updates := map[string]interface{}{
-		"display.width":  -1,
-		"display.height": 0,
-	}
-	err = cm.UpdateConfig(updates)
-	assert.NoError(t, err)
+	// Manually set invalid dimensions for testing
+	config := cm.GetConfig()
+	config.Display.Width = -1
+	config.Display.Height = 0
 
 	// Should fail validation
 	err = cm.ValidateConfig()
 	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "invalid display dimensions")
+	assert.Contains(t, err.Error(), "display dimensions must be positive")
 }
 
 func TestConfigManager_ValidateConfig_InvalidRefreshRate(t *testing.T) {
@@ -236,17 +147,14 @@ func TestConfigManager_ValidateConfig_InvalidRefreshRate(t *testing.T) {
 	err := cm.LoadConfig("")
 	assert.NoError(t, err)
 
-	// Update with invalid refresh rate
-	updates := map[string]interface{}{
-		"app.refresh_rate": "-1s",
-	}
-	err = cm.UpdateConfig(updates)
-	assert.NoError(t, err)
+	// Manually set invalid refresh rate for testing
+	config := cm.GetConfig()
+	config.App.RefreshRate = -1 * time.Second
 
 	// Should fail validation
 	err = cm.ValidateConfig()
 	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "invalid refresh rate")
+	assert.Contains(t, err.Error(), "refresh rate must be positive")
 }
 
 func TestConfigManager_ValidateConfig_InvalidAnimationSpeed(t *testing.T) {
@@ -254,15 +162,12 @@ func TestConfigManager_ValidateConfig_InvalidAnimationSpeed(t *testing.T) {
 	err := cm.LoadConfig("")
 	assert.NoError(t, err)
 
-	// Update with invalid animation speed
-	updates := map[string]interface{}{
-		"animation.speed": "-100ms",
-	}
-	err = cm.UpdateConfig(updates)
-	assert.NoError(t, err)
+	// Manually set invalid animation speed for testing
+	config := cm.GetConfig()
+	config.Animation.Speed = -100 * time.Millisecond
 
 	// Should fail validation
 	err = cm.ValidateConfig()
 	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "invalid animation speed")
+	assert.Contains(t, err.Error(), "animation speed must be positive")
 }

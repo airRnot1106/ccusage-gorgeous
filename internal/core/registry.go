@@ -196,16 +196,8 @@ func (pr *PluginRegistry) GetActiveAnimation() (interfaces.AnimationPlugin, erro
 
 // InitializePlugin initializes a plugin with its configuration
 func (pr *PluginRegistry) InitializePlugin(plugin interfaces.Plugin) error {
-	config := pr.configManager.GetConfig()
-	if config == nil {
-		return fmt.Errorf("no configuration available")
-	}
-
-	pluginConfig := config.Plugins.Config
-	if pluginConfig == nil {
-		pluginConfig = make(map[string]interface{})
-	}
-
+	// Initialize with empty config since we no longer load plugin-specific configuration
+	pluginConfig := make(map[string]interface{})
 	return plugin.Initialize(pluginConfig)
 }
 

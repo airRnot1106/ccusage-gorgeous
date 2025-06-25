@@ -5,131 +5,110 @@ import (
 	"time"
 
 	"github.com/airRnot1106/ccusage-gorgeous/internal/domain"
-	"github.com/spf13/viper"
 )
 
 // Config represents the application configuration
 type Config struct {
-	App        AppConfig        `mapstructure:"app"`
-	Display    DisplayConfig    `mapstructure:"display"`
-	Animation  AnimationConfig  `mapstructure:"animation"`
-	DataSource DataSourceConfig `mapstructure:"datasource"`
-	Plugins    PluginsConfig    `mapstructure:"plugins"`
+	App        AppConfig
+	Display    DisplayConfig
+	Animation  AnimationConfig
+	DataSource DataSourceConfig
+	Plugins    PluginsConfig
 }
 
 // AppConfig represents general application settings
 type AppConfig struct {
-	LogLevel    string        `mapstructure:"log_level"`
-	ConfigPath  string        `mapstructure:"config_path"`
-	RefreshRate time.Duration `mapstructure:"refresh_rate"`
+	LogLevel    string
+	RefreshRate time.Duration
 }
 
 // DisplayConfig represents display-specific settings
 type DisplayConfig struct {
-	Width  int `mapstructure:"width"`
-	Height int `mapstructure:"height"`
+	Width  int
+	Height int
 }
 
 // AnimationConfig represents animation-specific settings
 type AnimationConfig struct {
-	Enabled bool                    `mapstructure:"enabled"`
-	Speed   time.Duration           `mapstructure:"speed"`
-	Pattern domain.AnimationPattern `mapstructure:"pattern"`
-	Colors  []string                `mapstructure:"colors"`
+	Enabled bool
+	Speed   time.Duration
+	Pattern domain.AnimationPattern
+	Colors  []string
 }
 
 // DataSourceConfig represents data source settings
 type DataSourceConfig struct {
-	CcusagePath string        `mapstructure:"ccusage_path"`
-	Timeout     time.Duration `mapstructure:"timeout"`
-	CacheTime   time.Duration `mapstructure:"cache_time"`
+	CcusagePath string
+	Timeout     time.Duration
+	CacheTime   time.Duration
 }
 
 // PluginsConfig represents plugin configuration
 type PluginsConfig struct {
-	DataSource string                 `mapstructure:"datasource"`
-	Display    string                 `mapstructure:"display"`
-	Animation  string                 `mapstructure:"animation"`
-	Config     map[string]interface{} `mapstructure:"config"`
+	DataSource string
+	Display    string
+	Animation  string
 }
 
 // ConfigManager provides configuration management functionality
 type ConfigManager struct {
-	viper  *viper.Viper
 	config *Config
 }
 
 // NewConfigManager creates a new configuration manager
 func NewConfigManager() *ConfigManager {
-	v := viper.New()
-
-	// Set default values
-	v.SetDefault("app.log_level", "info")
-	v.SetDefault("app.refresh_rate", "1s")
-	v.SetDefault("display.format", "large")
-	v.SetDefault("display.width", 80)
-	v.SetDefault("display.height", 24)
-	v.SetDefault("display.show_timestamp", true)
-	v.SetDefault("display.show_breakdown", true)
-	v.SetDefault("animation.enabled", true)
-	v.SetDefault("animation.speed", "100ms")
-	v.SetDefault("animation.pattern", "rainbow")
-	v.SetDefault("animation.colors", []string{
-		"#FF0000", "#FF8000", "#FFFF00", "#80FF00",
-		"#00FF00", "#00FF80", "#00FFFF", "#0080FF",
-		"#0000FF", "#8000FF", "#FF00FF", "#FF0080",
-	})
-	v.SetDefault("datasource.ccusage_path", "ccusage")
-	v.SetDefault("datasource.timeout", "30s")
-	v.SetDefault("datasource.cache_time", "10s")
-	v.SetDefault("plugins.datasource", "ccusage-cli")
-	v.SetDefault("plugins.display", "rainbow-display")
-	v.SetDefault("plugins.animation", "rainbow-animation")
-
 	return &ConfigManager{
-		viper: v,
+		config: getDefaultConfig(),
 	}
 }
 
-// LoadConfig loads configuration from files and environment
+// getDefaultConfig returns the default configuration
+func getDefaultConfig() *Config {
+	return &Config{
+		App: AppConfig{
+			LogLevel:    "info",
+			RefreshRate: 1 * time.Second,
+		},
+		Display: DisplayConfig{
+			Width:  80,
+			Height: 24,
+		},
+		Animation: AnimationConfig{
+			Enabled: true,
+			Speed:   100 * time.Millisecond,
+			Pattern: domain.PatternRainbow,
+			Colors: []string{
+				"#FF0000", // Red
+				"#FF8000", // Orange
+				"#FFFF00", // Yellow
+				"#80FF00", // Light Green
+				"#00FF00", // Green
+				"#00FF80", // Cyan Green
+				"#00FFFF", // Cyan
+				"#0080FF", // Light Blue
+				"#0000FF", // Blue
+				"#8000FF", // Purple
+				"#FF00FF", // Magenta
+				"#FF0080", // Pink
+			},
+		},
+		DataSource: DataSourceConfig{
+			CcusagePath: "ccusage",
+			Timeout:     30 * time.Second,
+			CacheTime:   10 * time.Second,
+		},
+		Plugins: PluginsConfig{
+			DataSource: "ccusage-cli",
+			Display:    "rainbow-display",
+			Animation:  "rainbow-animation",
+		},
+	}
+}
+
+// LoadConfig loads configuration with defaults only (no file loading)
 func (cm *ConfigManager) LoadConfig(configPath string) error {
-	// Environment variable support
-	cm.viper.SetEnvPrefix("CCUSAGE")
-	cm.viper.AutomaticEnv()
-
-	// Set up config file paths
-	if configPath != "" && configPath != "non-existent-file.yaml" {
-		cm.viper.SetConfigFile(configPath)
-
-		// Try to read the specific config file
-		if err := cm.viper.ReadInConfig(); err != nil {
-			return fmt.Errorf("failed to read config file: %w", err)
-		}
-	} else if configPath == "" {
-		// Look for config files in standard locations
-		cm.viper.SetConfigName("config")
-		cm.viper.SetConfigType("yaml")
-		cm.viper.AddConfigPath("./configs")
-		cm.viper.AddConfigPath("$HOME/.ccusage-gorgeous")
-		cm.viper.AddConfigPath("/etc/ccusage-gorgeous")
-
-		// Try to read config file - this is optional
-		if err := cm.viper.ReadInConfig(); err != nil {
-			// Config file not found is acceptable, we'll use defaults
-			if _, ok := err.(viper.ConfigFileNotFoundError); !ok {
-				return fmt.Errorf("failed to read config file: %w", err)
-			}
-		}
-	}
-	// For test cases like "non-existent-file.yaml", skip file reading entirely
-
-	// Unmarshal to struct (this will use defaults if no file was found)
-	var config Config
-	if err := cm.viper.Unmarshal(&config); err != nil {
-		return fmt.Errorf("failed to unmarshal config: %w", err)
-	}
-
-	cm.config = &config
+	// Configuration is already loaded with defaults in NewConfigManager
+	// This method is kept for compatibility but doesn't load from files
 	return nil
 }
 
@@ -167,25 +146,18 @@ func (cm *ConfigManager) GetAnimationConfig() *domain.AnimationConfig {
 	}
 }
 
-// UpdateConfig updates the configuration and writes to file
+// UpdateConfig updates the configuration
 func (cm *ConfigManager) UpdateConfig(updates map[string]interface{}) error {
+	// Apply updates to specific fields
 	for key, value := range updates {
-		cm.viper.Set(key, value)
+		switch key {
+		case "plugins.datasource":
+			if v, ok := value.(string); ok {
+				cm.config.Plugins.DataSource = v
+			}
+		}
 	}
-
-	// Re-unmarshal to struct
-	var config Config
-	if err := cm.viper.Unmarshal(&config); err != nil {
-		return fmt.Errorf("failed to unmarshal updated config: %w", err)
-	}
-
-	cm.config = &config
 	return nil
-}
-
-// SaveConfig saves the current configuration to file
-func (cm *ConfigManager) SaveConfig() error {
-	return cm.viper.WriteConfig()
 }
 
 // ValidateConfig validates the current configuration
@@ -213,19 +185,19 @@ func (cm *ConfigManager) ValidateConfig() error {
 		return fmt.Errorf("invalid animation pattern: %s", cm.config.Animation.Pattern)
 	}
 
-	// Validate dimensions
+	// Validate display dimensions
 	if cm.config.Display.Width <= 0 || cm.config.Display.Height <= 0 {
-		return fmt.Errorf("invalid display dimensions: %dx%d",
-			cm.config.Display.Width, cm.config.Display.Height)
+		return fmt.Errorf("display dimensions must be positive")
 	}
 
-	// Validate durations
+	// Validate refresh rate
 	if cm.config.App.RefreshRate <= 0 {
-		return fmt.Errorf("invalid refresh rate: %v", cm.config.App.RefreshRate)
+		return fmt.Errorf("refresh rate must be positive")
 	}
 
+	// Validate animation speed
 	if cm.config.Animation.Speed <= 0 {
-		return fmt.Errorf("invalid animation speed: %v", cm.config.Animation.Speed)
+		return fmt.Errorf("animation speed must be positive")
 	}
 
 	return nil

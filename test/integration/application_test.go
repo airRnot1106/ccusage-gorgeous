@@ -200,33 +200,30 @@ func TestConfigurationEdgeCases(t *testing.T) {
 		err := configManager.LoadConfig("")
 		assert.NoError(t, err)
 
-		// Test invalid values
-		updates := map[string]interface{}{
-			"animation.pattern": "invalid-pattern",
-			"display.width":     -1,
-			"animation.speed":   "-100ms",
-		}
+		// UpdateConfig now only supports plugin datasource updates
+		// So we manually set invalid values for testing validation
+		config := configManager.GetConfig()
+		config.Animation.Pattern = "invalid-pattern"
+		config.Display.Width = -1
+		config.Animation.Speed = -100 * time.Millisecond
 
-		err = configManager.UpdateConfig(updates)
-		assert.NoError(t, err) // Update should succeed
-
-		// But validation should fail
+		// Validation should fail
 		err = configManager.ValidateConfig()
 		assert.Error(t, err)
 	})
 
-	t.Run("EmptyConfiguration", func(t *testing.T) {
+	t.Run("DefaultConfiguration", func(t *testing.T) {
 		configManager := core.NewConfigManager()
 
-		// Before loading, should return nil
+		// Config is now loaded with defaults in NewConfigManager
 		config := configManager.GetConfig()
-		assert.Nil(t, config)
+		assert.NotNil(t, config)
 
 		displayConfig := configManager.GetDisplayConfig()
-		assert.Nil(t, displayConfig)
+		assert.NotNil(t, displayConfig)
 
 		animationConfig := configManager.GetAnimationConfig()
-		assert.Nil(t, animationConfig)
+		assert.NotNil(t, animationConfig)
 	})
 }
 
