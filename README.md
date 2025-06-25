@@ -2,6 +2,8 @@
 
 A beautiful terminal user interface application that displays Claude Code usage costs obtained from ccusage as stunning ASCII art with animated rainbow colors.
 
+https://github.com/user-attachments/assets/c96a2147-ef59-46bc-9e1b-f064f34a8f64
+
 ## 🚀 Quick Start
 
 ### Installation & Usage
@@ -39,6 +41,15 @@ ccugorg --no-animation
 # Combine options
 ccugorg --animation-speed 200ms --animation-pattern wave
 ```
+
+<details>
+<summary>Demo</summary>
+
+https://github.com/user-attachments/assets/69955a3f-274c-4eaa-a3eb-880f5d724486
+
+https://github.com/user-attachments/assets/c2c65536-1f68-4940-a778-abb8a181b7bd
+
+</details>
 
 ## 🛠️ Development
 
